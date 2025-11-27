@@ -199,3 +199,9 @@ Para soporte técnico o preguntas:
 ---
 
 **¡Desarrollado con ❤️ para la comunidad geek de Ciudad Juárez!**
+
+## 🦍 Desarrollado por Gorilla Labs
+
+- 🌐 Web: [https://gorillabs.dev/](https://gorillabs.dev/)
+- 📧 Email: walfre@gorillabs.dev
+- 📱 Teléfono: +52 6565731023
