@@ -1,0 +1,43 @@
+name: comic_fest
+description: "Tu compañero digital oficial para Comic Fest, ¡la navaja suiza que todo fanático necesita! Compra boletos, vota en concursos, desbloquea promociones exclusivas y acumula puntos en la tienda, todo offline-first para"
+publish_to: "none"
+version: 1.0.0
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  supabase_flutter: '>=1.10.0'
+  shared_preferences: ^2.0.0
+  flutter_secure_storage: ^9.0.0
+  qr_flutter: ^4.0.0
+  mobile_scanner: ^7.0.0
+  connectivity_plus: ^7.0.0
+  google_maps_flutter: ^2.0.0
+  google_sign_in: '>=6.2.1'
+  uuid: ^4.0.0
+  intl: 0.20.2
+  cached_network_image: ^3.0.0
+  flutter_local_notifications: ^19.0.0
+  url_launcher: ^6.0.0
+  http: ^1.2.0
+  flutter_credit_card: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icons/dreamflow_icon.jpg
+  remove_alpha_ios: true
