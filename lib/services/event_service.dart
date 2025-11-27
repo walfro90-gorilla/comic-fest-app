@@ -79,7 +79,8 @@ class EventService {
   Future<List<EventModel>> getUpcomingEvents() async {
     if (_prefs == null) await init();
     final now = DateTime.now();
-    final allEvents = await _getAllEvents();
+    // Use getEvents() instead of _getAllEvents() to ensure data is fetched if cache is empty
+    final allEvents = await getEvents();
     return allEvents
         .where((event) => event.startTime.isAfter(now))
         .toList()

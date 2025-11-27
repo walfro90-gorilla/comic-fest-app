@@ -10,8 +10,20 @@ class SeedService {
     try {
       debugPrint('🌱 Starting seed process...');
       
+      // 1. Profiles & Exhibitors
+      final exhibitorIds = await seedExhibitors();
+
+      // 2. Events & Contests
       final eventIds = await seedEvents();
+      await seedContests();
+
+      // 3. Products
       await seedProducts();
+
+      // 4. Promotions
+      await seedPromotions(exhibitorIds);
+
+      // 5. Contestants
       await seedContestants(eventIds);
       
       debugPrint('✅ Seed process completed successfully!');
@@ -580,6 +592,162 @@ class SeedService {
     }
   }
 
+  Future<List<String>> seedExhibitors() async {
+    debugPrint('🏢 Seeding exhibitors...');
+    final exhibitorIds = <String>[];
+    
+    // 1. Create Profiles
+    final profiles = [
+      {
+        'id': _uuid.v4(),
+        'role': 'exhibitor',
+        'username': 'comic_store_mx',
+        'bio': 'La mejor tienda de cómics de México',
+        'avatar_url': 'https://via.placeholder.com/150/0000FF/808080?text=CS',
+      },
+      {
+        'id': _uuid.v4(),
+        'role': 'exhibitor',
+        'username': 'anime_shop_pro',
+        'bio': 'Figuras y coleccionables de anime',
+        'avatar_url': 'https://via.placeholder.com/150/FF0000/FFFFFF?text=AS',
+      },
+      {
+        'id': _uuid.v4(),
+        'role': 'exhibitor',
+        'username': 'geek_world',
+        'bio': 'Todo para el verdadero geek',
+        'avatar_url': 'https://via.placeholder.com/150/008000/FFFFFF?text=GW',
+      },
+    ];
+
+    try {
+      await _supabase.client.from('profiles').upsert(profiles);
+      
+      // 2. Create Exhibitor Details
+      final exhibitors = [
+        {
+          'profile_id': profiles[0]['id'],
+          'company_name': 'Comic Store MX',
+          'is_featured': true,
+          'website_url': 'https://comicstoremx.com',
+        },
+        {
+          'profile_id': profiles[1]['id'],
+          'company_name': 'Anime Shop Pro',
+          'is_featured': true,
+          'website_url': 'https://animeshop.pro',
+        },
+        {
+          'profile_id': profiles[2]['id'],
+          'company_name': 'Geek World',
+          'is_featured': false,
+          'website_url': 'https://geekworld.mx',
+        },
+      ];
+
+      await _supabase.client.from('exhibitor_details').upsert(exhibitors);
+      exhibitorIds.addAll(profiles.map((p) => p['id'] as String));
+      
+      debugPrint('✅ Seeded ${exhibitors.length} exhibitors');
+      return exhibitorIds;
+    } catch (e) {
+      debugPrint('❌ Exhibitors seeding failed: $e');
+      // Non-critical, return empty to allow other seeds to proceed if possible
+      return [];
+    }
+  }
+
+  Future<void> seedContests() async {
+    debugPrint('🏆 Seeding contests...');
+    
+    final contests = [
+      {
+        'id': _uuid.v4(),
+        'name': 'Pasarela Cosplay Pro',
+        'category': 'Cosplay',
+        'description': 'Vota por el mejor traje de la categoría profesional.',
+        'voting_start': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        'voting_end': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+        'is_active': true,
+      },
+      {
+        'id': _uuid.v4(),
+        'name': 'Ilustración Digital',
+        'category': 'Arte',
+        'description': 'Concurso de dibujo digital en vivo.',
+        'voting_start': DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
+        'voting_end': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+        'is_active': true,
+      },
+      {
+        'id': _uuid.v4(),
+        'name': 'Mejor Stand 2025',
+        'category': 'Expositores',
+        'description': 'Elige el stand con la mejor decoración.',
+        'voting_start': DateTime.now().toIso8601String(),
+        'voting_end': DateTime.now().add(const Duration(days: 3)).toIso8601String(),
+        'is_active': true,
+      },
+    ];
+
+    try {
+      await _supabase.client.from('contests').insert(contests);
+      debugPrint('✅ Seeded ${contests.length} contests');
+    } catch (e) {
+      debugPrint('❌ Contests seeding failed: $e');
+    }
+  }
+
+  Future<void> seedPromotions(List<String> exhibitorIds) async {
+    if (exhibitorIds.isEmpty) {
+      debugPrint('⚠️ No exhibitors found, skipping promotions seed');
+      return;
+    }
+    
+    debugPrint('⚡ Seeding promotions...');
+    
+    final promotions = [
+      {
+        'id': _uuid.v4(),
+        'exhibitor_id': exhibitorIds[0], // Comic Store MX
+        'title': '20% en Funko Pops',
+        'description': 'Descuento en todas las figuras Funko Pop regulares.',
+        'discount_percent': 20,
+        'valid_until': DateTime.now().add(const Duration(hours: 4)).toIso8601String(),
+        'is_flash': true,
+        'is_active': true,
+      },
+      {
+        'id': _uuid.v4(),
+        'exhibitor_id': exhibitorIds[0],
+        'title': '3x2 en Cómics Panini',
+        'description': 'Compra 3 y paga 2 en todos los mangas y cómics de Panini.',
+        'discount_percent': 33,
+        'valid_until': DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
+        'is_flash': true,
+        'is_active': true,
+      },
+      {
+        'id': _uuid.v4(),
+        'exhibitor_id': exhibitorIds[1], // Anime Shop Pro
+        'title': 'Figura Demon Slayer -50%',
+        'description': 'Descuento masivo en figuras seleccionadas de Kimetsu no Yaiba.',
+        'discount_percent': 50,
+        'valid_until': DateTime.now().add(const Duration(minutes: 45)).toIso8601String(),
+        'is_flash': true,
+        'is_active': true,
+      },
+    ];
+
+    try {
+      await _supabase.client.from('promotions').insert(promotions);
+      debugPrint('✅ Seeded ${promotions.length} promotions');
+    } catch (e) {
+      debugPrint('❌ Promotions seeding failed: $e');
+    }
+  }
+
   Future<void> clearAllData() async {
     try {
       debugPrint('🗑️ Clearing all seed data...');
@@ -588,9 +756,14 @@ class SeedService {
       // This avoids the Postgres UUID cast error caused by empty-string filters.
       const safeUuid = '00000000-0000-0000-0000-000000000000';
 
+      await _supabase.client.from('promotions').delete().neq('id', safeUuid);
+      await _supabase.client.from('contests').delete().neq('id', safeUuid);
       await _supabase.client.from('contestants').delete().neq('id', safeUuid);
       await _supabase.client.from('schedule_items').delete().neq('id', safeUuid);
       await _supabase.client.from('products').delete().neq('id', safeUuid);
+      await _supabase.client.from('exhibitor_details').delete().neq('profile_id', safeUuid);
+      // Note: We don't delete profiles to avoid messing with auth, but in a pure seed env we might.
+      // For now, we leave profiles as they might be linked to auth users.
       
       debugPrint('✅ All data cleared');
     } catch (e) {

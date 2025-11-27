@@ -1336,7 +1336,7 @@ class _DataManagementDialogState extends State<DataManagementDialog> {
               child: ListTile(
                 leading: const Icon(Icons.add_circle, color: Colors.green),
                 title: const Text('Generar Datos de Prueba'),
-                subtitle: const Text('16 eventos + 12 productos + 8 concursantes'),
+                subtitle: const Text('Eventos, Productos, Expositores, Concursos y Promociones'),
                 trailing: _isLoading
                     ? const CircularProgressIndicator()
                     : const Icon(Icons.arrow_forward),

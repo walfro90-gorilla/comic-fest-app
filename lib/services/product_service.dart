@@ -35,6 +35,24 @@ class ProductService {
     }
   }
 
+  Future<List<ProductModel>> getExclusiveProducts() async {
+    try {
+      final response = await _supabase.client
+          .from('products')
+          .select()
+          .eq('is_active', true)
+          .eq('is_exclusive', true)
+          .limit(5);
+
+      return (response as List)
+          .map((json) => ProductModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      debugPrint('⚠️ Failed to fetch exclusive products: $e');
+      return [];
+    }
+  }
+
   Future<ProductModel?> getProductById(String productId) async {
     try {
       final response = await _supabase.client
