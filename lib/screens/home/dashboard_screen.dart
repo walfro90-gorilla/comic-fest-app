@@ -225,19 +225,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: CircleAvatar(
                         radius: 24,
                         backgroundColor: Colors.black26,
-                        backgroundImage: _currentUser?.avatarUrl != null
-                            ? NetworkImage(_currentUser!.avatarUrl!)
-                            : null,
-                        child: _currentUser?.avatarUrl == null
-                            ? Text(
-                                _currentUser?.displayName?[0].toUpperCase() ?? 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
+                        child: ClipOval(
+                          child: _currentUser?.avatarUrl != null
+                              ? Image.network(
+                                  _currentUser!.avatarUrl!,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Text(
+                                        (_currentUser?.displayName?.isNotEmpty == true)
+                                            ? _currentUser!.displayName![0].toUpperCase()
+                                            : 'U',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Text(
+                                  (_currentUser?.displayName?.isNotEmpty == true)
+                                      ? _currentUser!.displayName![0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  ),
                                 ),
-                              )
-                            : null,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),

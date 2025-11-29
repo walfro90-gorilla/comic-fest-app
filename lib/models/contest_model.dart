@@ -23,8 +23,8 @@ class ContestModel {
       name: json['name'] as String,
       category: json['category'] as String,
       description: json['description'] as String?,
-      votingStart: DateTime.parse(json['voting_start'] as String),
-      votingEnd: DateTime.parse(json['voting_end'] as String),
+      votingStart: DateTime.parse(json['voting_start'] as String).toLocal(),
+      votingEnd: DateTime.parse(json['voting_end'] as String).toLocal(),
       isActive: json['is_active'] as bool? ?? true,
     );
   }

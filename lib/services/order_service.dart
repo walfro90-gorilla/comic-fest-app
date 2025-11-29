@@ -205,35 +205,68 @@ class OrderService {
     required String status,
     String? paymentMethod,
     String? statusDetail,
+    Map<String, dynamic>? webhookData,
   }) async {
     try {
-      // Verificar que no exista un mp_payment_id duplicado
-      final existingPayment = await _supabase.client
+      debugPrint('🔄 Updating payment for order: $orderId');
+      debugPrint('   MP Payment ID: $mpPaymentId');
+      debugPrint('   Status: $status');
+
+      // 1. Verificar estado actual del pago
+      final currentPayment = await _supabase.client
           .from('payments')
-          .select('id, order_id')
-          .eq('mp_payment_id', mpPaymentId)
+          .select()
+          .eq('order_id', orderId)
           .maybeSingle();
 
-      if (existingPayment != null && existingPayment['order_id'] != orderId) {
-        debugPrint('⚠️ Payment ID $mpPaymentId already exists for another order');
-        throw Exception('Este pago ya fue procesado anteriormente');
+      if (currentPayment == null) {
+        debugPrint('❌ Payment record not found for order $orderId');
+        throw Exception('Payment record not found for order $orderId');
       }
 
-      await _supabase.client.from('payments').update({
-        'mp_payment_id': mpPaymentId,
+      // Verificar si ya tiene un ID de pago asignado
+      final currentMpId = currentPayment['mp_payment_id'];
+      if (currentMpId != null) {
+        if (currentMpId.toString() == mpPaymentId) {
+          debugPrint('⚠️ Payment already updated with this MP ID. Skipping update.');
+          return;
+        }
+        debugPrint('❌ Payment already has a different MP ID: $currentMpId');
+        throw Exception('Este pago ya fue procesado con otro ID de Mercado Pago');
+      }
+
+      // 2. Actualizar el pago por partes para aislar el error 22023
+      
+      // 2. Actualizar TODO junto para satisfacer triggers
+      // Es probable que el trigger espere que si status='approved', mp_payment_id y webhook_data existan.
+      
+      final Map<String, dynamic> updateData = {
         'status': status,
-        if (paymentMethod != null) 'payment_method': paymentMethod,
-        if (statusDetail != null) 'status_detail': statusDetail,
+        'mp_payment_id': mpPaymentId,
+        'webhook_data': webhookData ?? {}, // Asegurar JSON válido
         'updated_at': DateTime.now().toIso8601String(),
-      }).eq('order_id', orderId).isFilter('mp_payment_id', null);
+      };
 
-      // También actualizar la orden a 'paid'
-      await _supabase.client.from('orders').update({
-        'status': 'paid',
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', orderId);
+      if (paymentMethod != null) updateData['payment_method'] = paymentMethod;
+      if (statusDetail != null) updateData['status_detail'] = statusDetail;
 
-      debugPrint('✅ Payment and order updated with MP data for order $orderId');
+      debugPrint('🔄 Updating payment with ALL data...');
+      
+      await _supabase.client.from('payments').update(updateData).eq('order_id', orderId);
+
+      // 3. Actualizar la orden si el pago fue aprobado
+      // NOTA: El trigger en la base de datos (handle_payment_approval) ya actualiza el estado de la orden a 'paid'.
+      // Eliminamos esta actualización explícita para evitar conflictos y errores (22023).
+      /*
+      if (status == 'approved') {
+        await _supabase.client.from('orders').update({
+          'status': 'paid',
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', orderId);
+      }
+      */
+
+      debugPrint('✅ Payment flow completed for order $orderId');
     } catch (e) {
       debugPrint('❌ Failed to update payment with MP data: $e');
       rethrow;

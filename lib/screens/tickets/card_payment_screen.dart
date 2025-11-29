@@ -29,10 +29,10 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   final MercadoPagoService _mpService = MercadoPagoService();
   final OrderService _orderService = OrderService();
 
-  String cardNumber = '';
-  String expiryDate = '';
-  String cardHolderName = '';
-  String cvvCode = '';
+  String cardNumber = '4189 1412 2126 7633';
+  String expiryDate = '11/23';
+  String cardHolderName = 'APRO';
+  String cvvCode = '123';
   bool isCvvFocused = false;
   bool _isProcessing = false;
   
@@ -41,13 +41,23 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   String? _createdOrderNumber;
 
   // Datos de identificación (requeridos por Mercado Pago)
-  final _identificationController = TextEditingController();
+  final _identificationController = TextEditingController(text: '12346789');
   String _identificationType = 'DNI'; // DNI, CURP, RFC, etc.
 
   @override
   void dispose() {
     _identificationController.dispose();
     super.dispose();
+  }
+
+  void _fillTestCard() {
+    setState(() {
+      cardNumber = '4189 1412 2126 7633';
+      expiryDate = '11/23'; // Note: This might be expired. User requested 11/23. I'll use it.
+      cardHolderName = 'APRO';
+      cvvCode = '123';
+      _identificationController.text = '12346789';
+    });
   }
 
   Future<void> _processPayment() async {
@@ -118,7 +128,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
 
       if (paymentResult['success'] == true) {
         final status = paymentResult['status'];
-        final paymentId = paymentResult['payment_id'];
+        final paymentId = paymentResult['payment_id'].toString();
         final statusDetail = paymentResult['status_detail'];
 
         debugPrint('✅ Payment status: $status');
@@ -148,13 +158,19 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
           );
           debugPrint('✅ Payment record creado');
           
+          // Extraer datos crudos para el webhook_data
+          final rawData = paymentResult['raw'] as Map<String, dynamic>?;
+
           if (status == 'approved') {
             // Actualizar el payment con los datos de Mercado Pago
-            await _approveOrder(paymentId, statusDetail);
+            await _approveOrder(paymentId, statusDetail, 'approved', rawData);
             if (mounted) {
               _showSuccessDialog();
             }
           } else if (status == 'pending' || status == 'in_process') {
+            // También guardar la info para pagos pendientes
+            await _approveOrder(paymentId, statusDetail, 'pending', rawData);
+            
             // Pagos pendientes o en proceso
             if (mounted) {
               _showPendingDialog(statusDetail);
@@ -169,33 +185,67 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         }
       } else {
         // Error en el procesamiento
-        final errorMsg = paymentResult['error'] ?? 'Error desconocido';
+        final rawError = paymentResult['error'] ?? 'Error desconocido';
         final details = paymentResult['details'];
-        _showErrorDialog(errorMsg, details);
+        final friendlyError = _parseErrorMessage(rawError.toString());
+        _showErrorDialog(friendlyError, details ?? rawError);
       }
     } catch (e) {
       debugPrint('❌ Error: $e');
       
       if (mounted) {
         setState(() => _isProcessing = false);
-        _showErrorDialog(e.toString(), null);
+        final friendlyError = _parseErrorMessage(e.toString());
+        _showErrorDialog(friendlyError, e.toString());
       }
     }
   }
 
-  Future<void> _approveOrder(String mpPaymentId, String? statusDetail) async {
+  String _parseErrorMessage(String error) {
+    final lowerError = error.toLowerCase();
+    
+    // Errores específicos de validación
+    if (lowerError.contains('invalid expiration_year')) {
+      return 'El año de expiración de la tarjeta es incorrecto.\nPor favor verifica la fecha de vencimiento.';
+    }
+    if (lowerError.contains('invalid expiration_month')) {
+      return 'El mes de expiración de la tarjeta es incorrecto.\nPor favor verifica la fecha de vencimiento.';
+    }
+    if (lowerError.contains('invalid security_code')) {
+      return 'El código de seguridad (CVV) es incorrecto.';
+    }
+    if (lowerError.contains('invalid card_number') || lowerError.contains('bad_filled_card_number')) {
+      return 'El número de tarjeta es inválido.';
+    }
+    if (lowerError.contains('bad_request')) {
+      return 'Los datos de la tarjeta no son válidos. Por favor verifícalos.';
+    }
+    if (lowerError.contains('insufficient_amount')) {
+      return 'La tarjeta no tiene fondos suficientes para realizar la compra.';
+    }
+    
+    // Error genérico de FunctionException
+    if (error.contains('FunctionException')) {
+      return 'No pudimos procesar tu tarjeta en este momento.\nPor favor intenta con otra tarjeta o verifica los datos.';
+    }
+
+    return error;
+  }
+
+  Future<void> _approveOrder(String mpPaymentId, String? statusDetail, String status, Map<String, dynamic>? paymentData) async {
     try {
       if (_createdOrderId == null) {
         throw Exception('No se ha creado la orden');
       }
       
-      // Actualizar el payment con el mp_payment_id y status approved
+      // Actualizar el payment con el mp_payment_id y status
       await _orderService.updatePaymentWithMPData(
         orderId: _createdOrderId!,
         mpPaymentId: mpPaymentId,
-        status: 'approved',
+        status: status,
         paymentMethod: 'card',
         statusDetail: statusDetail,
+        webhookData: paymentData,
       );
       
       debugPrint('✅ Pago actualizado. El trigger generará los tickets.');
@@ -540,56 +590,41 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         icon: Icon(
-          Icons.error_outline,
+          Icons.error_rounded,
           color: Theme.of(context).colorScheme.error,
-          size: 64,
+          size: 72,
         ),
-        title: const Text('Error al Procesar Pago'),
+        title: Text(
+          'No se pudo procesar el pago',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 8),
               Text(
-                'Hubo un problema al procesar tu pago:',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  error,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
+                error,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.5,
                 ),
               ),
-              if (details != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Detalles técnicos:',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  details.toString(),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 10,
-                      ),
-                ),
-              ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              // Sugerencias
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,36 +633,95 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                       children: [
                         Icon(
                           Icons.lightbulb_outline,
-                          size: 16,
+                          size: 20,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Sugerencias',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          '¿Qué puedes hacer?',
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '• Verifica tu conexión a internet\n'
-                      '• Confirma que los datos sean correctos\n'
-                      '• Intenta con otra tarjeta\n'
-                      '• Contacta a tu banco si el problema persiste',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    const SizedBox(height: 12),
+                    _buildSuggestionItem('Verifica que los datos de la tarjeta sean correctos'),
+                    _buildSuggestionItem('Asegúrate de tener fondos suficientes'),
+                    _buildSuggestionItem('Intenta con otra tarjeta (débito/crédito)'),
+                    _buildSuggestionItem('Contacta a tu banco si el problema persiste'),
                   ],
                 ),
               ),
+              
+              if (details != null) ...[
+                const SizedBox(height: 16),
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: Text(
+                      'Ver detalles técnicos',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    iconColor: Theme.of(context).colorScheme.outline,
+                    collapsedIconColor: Theme.of(context).colorScheme.outline,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        width: double.infinity,
+                        child: Text(
+                          details.toString(),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontFamily: 'monospace',
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Entendido, volver a intentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestionItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('•', style: TextStyle(color: Theme.of(context).colorScheme.outline)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
         ],
       ),
@@ -732,6 +826,19 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      
+                      // Botón de prueba
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: _fillTestCard,
+                          icon: const Icon(Icons.bug_report),
+                          label: const Text('APROBADO'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.green,
+                          ),
+                        ),
+                      ),
                       
                       // Formulario de tarjeta
                       CreditCardForm(

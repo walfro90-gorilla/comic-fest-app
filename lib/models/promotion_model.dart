@@ -26,7 +26,7 @@ class PromotionModel {
       title: json['title'] as String,
       description: json['description'] as String,
       discountPercent: json['discount_percent'] as int?,
-      validUntil: DateTime.parse(json['valid_until'] as String),
+      validUntil: DateTime.parse(json['valid_until'] as String).toLocal(),
       isFlash: json['is_flash'] as bool? ?? false,
       exhibitorName: json['exhibitor_details'] != null 
           ? json['exhibitor_details']['company_name'] as String? 

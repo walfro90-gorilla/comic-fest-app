@@ -49,12 +49,12 @@ class EventModel {
       title: json['title'] as String,
       description: json['description'] as String? ?? '',
       category: category ?? EventCategory.actividad,
-      startTime: json['start_time'] is String
+      startTime: (json['start_time'] is String
           ? DateTime.parse(json['start_time'])
-          : (json['start_time'] as DateTime),
-      endTime: json['end_time'] is String
+          : (json['start_time'] as DateTime)).toLocal(),
+      endTime: (json['end_time'] is String
           ? DateTime.parse(json['end_time'])
-          : (json['end_time'] as DateTime),
+          : (json['end_time'] as DateTime)).toLocal(),
       locationId: json['location_id'] as String?,
       artistId: json['artist_id'] as String?,
       isActive: json['is_active'] as bool? ?? true,

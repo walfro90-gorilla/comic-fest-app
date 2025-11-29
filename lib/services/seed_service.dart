@@ -10,6 +10,9 @@ class SeedService {
     try {
       debugPrint('🌱 Starting seed process...');
       
+      // 0. Clear existing data
+      await clearAllData();
+      
       // 1. Profiles & Exhibitors
       final exhibitorIds = await seedExhibitors();
 
@@ -46,8 +49,8 @@ class SeedService {
         'title': 'Concurso de Cosplay 2025',
         'description': 'El concurso más esperado del año. Los mejores cosplayers compiten por el gran premio de \$10,000 MXN. Vota por tu favorito!',
         'category': 'concurso',
-        'start_time': DateTime.now().add(const Duration(days: 3, hours: 18)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 3, hours: 21)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(hours: 2)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(hours: 5)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -55,8 +58,8 @@ class SeedService {
         'title': 'Concurso de Baile K-Pop',
         'description': 'Cover dance competition de los mejores grupos de K-Pop. Coreografías grupales e individuales. Premio: \$5,000 MXN y mercancía oficial.',
         'category': 'concurso',
-        'start_time': DateTime.now().add(const Duration(days: 2, hours: 16)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 2, hours: 19)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 1, hours: 16)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 1, hours: 19)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -64,8 +67,8 @@ class SeedService {
         'title': 'Concurso de Fan Art',
         'description': 'Exhibición y votación de arte digital y tradicional. Categorías: manga/anime, cómics occidentales, y videojuegos. Los ganadores serán expuestos en la galería oficial.',
         'category': 'concurso',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 13)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 16)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 13)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 16)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -73,8 +76,8 @@ class SeedService {
         'title': 'Panel: El Futuro del Manga en México',
         'description': 'Conversatorio con editores y mangakas mexicanos sobre la industria del manga en Latinoamérica. Moderado por Rafael Aviña.',
         'category': 'panel',
-        'start_time': DateTime.now().add(const Duration(days: 2, hours: 10)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 2, hours: 11, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(hours: 1)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(hours: 2, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -82,8 +85,8 @@ class SeedService {
         'title': 'Firma de Autógrafos: Edgar Delgado',
         'description': 'El reconocido colorista de Marvel Comics (Spider-Man, Daredevil) firmará cómics y posters. ¡Trae tus ejemplares favoritos!',
         'category': 'firma',
-        'start_time': DateTime.now().add(const Duration(days: 2, hours: 12)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 2, hours: 13, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(hours: 3)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(hours: 4, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -91,8 +94,8 @@ class SeedService {
         'title': 'Torneo de Cosplay: Marvel vs DC',
         'description': 'Competencia épica donde equipos representan universos Marvel y DC. Premios en efectivo y mercancía exclusiva. Registro presencial.',
         'category': 'torneo',
-        'start_time': DateTime.now().add(const Duration(days: 2, hours: 15)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 2, hours: 18)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(hours: 5)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(hours: 8)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -100,8 +103,8 @@ class SeedService {
         'title': 'Taller: Introducción al Dibujo de Manga',
         'description': 'Aprende técnicas básicas de dibujo manga con la artista Karla Díaz. Materiales incluidos. Cupo limitado a 30 personas.',
         'category': 'actividad',
-        'start_time': DateTime.now().add(const Duration(days: 2, hours: 14)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 2, hours: 16)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 1, hours: 10)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 1, hours: 12)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -109,8 +112,8 @@ class SeedService {
         'title': 'Panel: Cómo Crear tu Propio Webcomic',
         'description': 'Expertos en narrativa digital comparten consejos para publicar tu webcomic. Incluye distribución, monetización y marketing.',
         'category': 'panel',
-        'start_time': DateTime.now().add(const Duration(days: 3, hours: 10)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 3, hours: 11, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 1, hours: 12)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 1, hours: 13, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -118,8 +121,8 @@ class SeedService {
         'title': 'Firma de Autógrafos: Bachan',
         'description': 'El ilustrador mexicano de Dota 2 y League of Legends estará firmando prints y arte original. No te pierdas esta oportunidad única.',
         'category': 'firma',
-        'start_time': DateTime.now().add(const Duration(days: 3, hours: 13)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 3, hours: 14, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 1, hours: 14)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 1, hours: 15, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -127,8 +130,8 @@ class SeedService {
         'title': 'Torneo: Super Smash Bros Ultimate',
         'description': 'Competencia oficial con brackets profesionales. Primer lugar: \$3,000 MXN. Inscripción en el área de gaming desde las 9am.',
         'category': 'torneo',
-        'start_time': DateTime.now().add(const Duration(days: 3, hours: 11)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 3, hours: 17)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 1, hours: 11)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 1, hours: 17)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -136,8 +139,8 @@ class SeedService {
         'title': 'Actividad: Karaoke Anime',
         'description': 'Canta tus openings favoritos de anime frente al público. Premios para las mejores interpretaciones. ¡Demuestra tu pasión!',
         'category': 'actividad',
-        'start_time': DateTime.now().add(const Duration(days: 3, hours: 16)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 3, hours: 19)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 1, hours: 18)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 1, hours: 21)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -145,8 +148,8 @@ class SeedService {
         'title': 'Panel: La Era Dorada del Cómic Mexicano',
         'description': 'Historiadores y coleccionistas analizan la época de oro del cómic mexicano con Kalimán, Memín y Lágrimas y Risas.',
         'category': 'panel',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 10, minutes: 30)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 12)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 10)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 11, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -154,8 +157,8 @@ class SeedService {
         'title': 'Firma de Autógrafos: Patricio Oliver',
         'description': 'El creador de "Rocko" estará presente para firmar ejemplares de su obra. Conoce la historia detrás de este ícono del cómic nacional.',
         'category': 'firma',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 14)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 15, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 12)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 13, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -163,8 +166,8 @@ class SeedService {
         'title': 'Torneo: Concurso de Disfraces Infantil',
         'description': 'Los pequeños fans muestran sus mejores cosplays. Categorías: Marvel, DC, Anime, y Videojuegos. Premios para todos los participantes.',
         'category': 'torneo',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 12)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 13, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 11)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 12, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -172,8 +175,8 @@ class SeedService {
         'title': 'Taller: Maquillaje FX para Cosplay',
         'description': 'Aprende técnicas profesionales de caracterización y maquillaje de efectos especiales. Trae tu kit básico de maquillaje.',
         'category': 'actividad',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 15)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 17, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 15)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 17, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -181,8 +184,8 @@ class SeedService {
         'title': 'Panel: Animación Mexicana: Del Papel a la Pantalla',
         'description': 'Creadores de estudios de animación mexicanos hablan sobre producción, financiamiento y distribución internacional.',
         'category': 'panel',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 16)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 17, minutes: 30)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 16)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 17, minutes: 30)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -190,8 +193,8 @@ class SeedService {
         'title': 'Actividad: Trivia Geek: Universo Marvel',
         'description': 'Demuestra tus conocimientos sobre el MCU, cómics clásicos y personajes obscuros. Los ganadores se llevan funko pops exclusivos.',
         'category': 'actividad',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 18)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 19)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 18)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 19)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -199,8 +202,8 @@ class SeedService {
         'title': 'Torneo: Magic The Gathering - Commander',
         'description': 'Torneo formato Commander con pods de 4 jugadores. Power level 7-8. Premios: sobres de ediciones recientes y playmat exclusivo.',
         'category': 'torneo',
-        'start_time': DateTime.now().add(const Duration(days: 4, hours: 10)).toIso8601String(),
-        'end_time': DateTime.now().add(const Duration(days: 4, hours: 15)).toIso8601String(),
+        'start_time': DateTime.now().add(const Duration(days: 2, hours: 10)).toUtc().toIso8601String(),
+        'end_time': DateTime.now().add(const Duration(days: 2, hours: 15)).toUtc().toIso8601String(),
         'is_active': true,
       },
     ];
@@ -667,8 +670,8 @@ class SeedService {
         'name': 'Pasarela Cosplay Pro',
         'category': 'Cosplay',
         'description': 'Vota por el mejor traje de la categoría profesional.',
-        'voting_start': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-        'voting_end': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+        'voting_start': DateTime.now().subtract(const Duration(days: 1)).toUtc().toIso8601String(),
+        'voting_end': DateTime.now().add(const Duration(days: 2)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -676,8 +679,8 @@ class SeedService {
         'name': 'Ilustración Digital',
         'category': 'Arte',
         'description': 'Concurso de dibujo digital en vivo.',
-        'voting_start': DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
-        'voting_end': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+        'voting_start': DateTime.now().subtract(const Duration(hours: 12)).toUtc().toIso8601String(),
+        'voting_end': DateTime.now().add(const Duration(days: 1)).toUtc().toIso8601String(),
         'is_active': true,
       },
       {
@@ -685,8 +688,8 @@ class SeedService {
         'name': 'Mejor Stand 2025',
         'category': 'Expositores',
         'description': 'Elige el stand con la mejor decoración.',
-        'voting_start': DateTime.now().toIso8601String(),
-        'voting_end': DateTime.now().add(const Duration(days: 3)).toIso8601String(),
+        'voting_start': DateTime.now().toUtc().toIso8601String(),
+        'voting_end': DateTime.now().add(const Duration(days: 3)).toUtc().toIso8601String(),
         'is_active': true,
       },
     ];
@@ -714,7 +717,7 @@ class SeedService {
         'title': '20% en Funko Pops',
         'description': 'Descuento en todas las figuras Funko Pop regulares.',
         'discount_percent': 20,
-        'valid_until': DateTime.now().add(const Duration(hours: 4)).toIso8601String(),
+        'valid_until': DateTime.now().add(const Duration(hours: 4)).toUtc().toIso8601String(),
         'is_flash': true,
         'is_active': true,
       },
@@ -724,7 +727,7 @@ class SeedService {
         'title': '3x2 en Cómics Panini',
         'description': 'Compra 3 y paga 2 en todos los mangas y cómics de Panini.',
         'discount_percent': 33,
-        'valid_until': DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
+        'valid_until': DateTime.now().add(const Duration(hours: 2)).toUtc().toIso8601String(),
         'is_flash': true,
         'is_active': true,
       },
@@ -734,7 +737,7 @@ class SeedService {
         'title': 'Figura Demon Slayer -50%',
         'description': 'Descuento masivo en figuras seleccionadas de Kimetsu no Yaiba.',
         'discount_percent': 50,
-        'valid_until': DateTime.now().add(const Duration(minutes: 45)).toIso8601String(),
+        'valid_until': DateTime.now().add(const Duration(minutes: 45)).toUtc().toIso8601String(),
         'is_flash': true,
         'is_active': true,
       },

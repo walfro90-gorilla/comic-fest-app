@@ -7,7 +7,7 @@ class ContestService {
 
   Future<List<ContestModel>> getActiveContests() async {
     try {
-      final now = DateTime.now().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
       var response = await _supabase.client
           .from('contests')
           .select()

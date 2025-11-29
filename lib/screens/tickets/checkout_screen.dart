@@ -21,9 +21,9 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _nameController = TextEditingController(text: 'Walfre');
+  final _emailController = TextEditingController(text: 'walfre.am@gmail.com');
+  final _phoneController = TextEditingController(text: '6565731023');
   
   final MercadoPagoService _mpService = MercadoPagoService();
   final OrderService _orderService = OrderService();
