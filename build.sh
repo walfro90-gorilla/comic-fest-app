@@ -20,3 +20,4 @@ echo "Building web app..."
 flutter build web --release --no-tree-shake-icons
 
 echo "Build complete!"
+
