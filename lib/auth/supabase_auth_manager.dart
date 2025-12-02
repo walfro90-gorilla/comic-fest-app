@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:comic_fest/auth/auth_manager.dart';
 import 'package:comic_fest/models/user_model.dart';
 import 'package:comic_fest/supabase/supabase_config.dart';
@@ -115,31 +116,56 @@ class SupabaseAuthManager extends AuthManager
   @override
   Future<UserModel?> signInWithGoogle(BuildContext context) async {
     try {
-      final response = await _client.auth.signInWithOAuth(
-        sb.OAuthProvider.google,
-        redirectTo: 'comicfest://callback',
+      // 1. Iniciar flujo nativo de Google
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        // serverClientId es necesario para obtener el ID Token válido para Supabase
+        // Este ID debe coincidir con el "Web Client ID" en Google Cloud Console
+        // y estar agregado en Supabase > Auth > Providers > Google
+        serverClientId: '241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com', 
+      );
+      
+      final googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        // El usuario canceló el inicio de sesión
+        return null;
+      }
+
+      // 2. Obtener credenciales de autenticación (tokens)
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (accessToken == null) {
+        throw 'No Access Token found.';
+      }
+      if (idToken == null) {
+        throw 'No ID Token found.';
+      }
+
+      // 3. Autenticar con Supabase usando el ID Token
+      final response = await _client.auth.signInWithIdToken(
+        provider: sb.OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
       );
 
-      if (response) {
-        // Esperar a que se complete el flujo OAuth
-        await Future.delayed(const Duration(seconds: 2));
-        
-        final user = _client.auth.currentUser;
-        if (user != null) {
-          return await _fetchOrCreateProfile(user);
-        }
+      // 4. Verificar y crear/obtener perfil
+      if (response.user != null) {
+        return await _fetchOrCreateProfile(response.user!);
       }
+      
       return null;
     } on sb.AuthException catch (e) {
       debugPrint('❌ Google auth error: ${e.message}');
       if (context.mounted) {
-        _showError(context, e.message);
+        _showError(context, 'Error de autenticación: ${e.message}');
       }
       return null;
     } catch (e) {
       debugPrint('❌ Google sign in error: $e');
       if (context.mounted) {
-        _showError(context, 'Error al conectar con Google.');
+        _showError(context, 'Error al conectar con Google. Verifica tu conexión.');
       }
       return null;
     }
