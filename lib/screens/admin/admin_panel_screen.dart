@@ -5,6 +5,7 @@ import 'package:comic_fest/models/ticket_model.dart';
 import 'package:comic_fest/models/product_model.dart';
 import 'package:comic_fest/models/panel_vote_model.dart';
 import 'package:comic_fest/models/points_transaction_model.dart';
+import 'package:comic_fest/models/payment_model.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:comic_fest/services/seed_service.dart';
 import 'package:comic_fest/services/event_service.dart';
@@ -41,6 +42,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
   List<ContestantModel> _contestants = [];
   List<PanelVoteModel> _votes = [];
   List<PointsTransactionModel> _transactions = [];
+  List<PaymentModel> _payments = [];
   
   bool _isLoading = true;
   String _filterRole = 'all';
@@ -48,7 +50,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         _loadDataForCurrentTab();
@@ -85,6 +87,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
         break;
       case 6:
         await _loadTransactions();
+        break;
+      case 7:
+        await _loadPayments();
         break;
     }
   }
@@ -262,6 +267,73 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
     }
   }
 
+  Future<void> _loadPayments() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _supabase.client
+          .from('payments')
+          .select()
+          .order('created_at', ascending: false);
+      final payments = (response as List).map((json) => PaymentModel.fromJson(json)).toList();
+      setState(() {
+        _payments = payments;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('❌ Error loading payments: $e');
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar pagos: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _updatePaymentStatus(PaymentModel payment, String status, String detail) async {
+    if (payment.mpPaymentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: El pago no tiene ID de Mercado Pago'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // Simular cambio de estado
+      await _supabase.client.from('payments').update({
+        'status': status,
+        'status_detail': detail,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', payment.id);
+
+      // Si es 'approved', el trigger generará los tickets.
+      // Si es 'rejected', la app debería notificar al usuario (si hay lógica implementada).
+      
+      if (mounted) {
+        String message = status == 'approved' 
+            ? '✅ Pago aprobado. Tickets generados.' 
+            : '⚠️ Pago marcado como $status ($detail).';
+            
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message), 
+            backgroundColor: status == 'approved' ? Colors.green : Colors.orange
+          ),
+        );
+        await _loadPayments();
+      }
+    } catch (e) {
+      debugPrint('❌ Error updating payment: $e');
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al actualizar pago: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   List<UserModel> get _filteredUsers {
     if (_filterRole == 'all') return _users;
     return _users.where((u) => u.role.name == _filterRole).toList();
@@ -299,6 +371,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
             Tab(text: 'Concursantes', icon: Icon(Icons.star, size: 18)),
             Tab(text: 'Votos', icon: Icon(Icons.how_to_vote, size: 18)),
             Tab(text: 'Puntos', icon: Icon(Icons.monetization_on, size: 18)),
+            Tab(text: 'Pagos', icon: Icon(Icons.payment, size: 18)),
           ],
         ),
       ),
@@ -314,6 +387,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
                 _buildContestantsTab(),
                 _buildVotesTab(),
                 _buildTransactionsTab(),
+                _buildPaymentsTab(),
               ],
             ),
       floatingActionButton: _tabController.index == 0
@@ -453,6 +527,50 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
         ],
       );
 
+  Widget _buildPaymentsTab() => _buildDataList<PaymentModel>(
+        data: _payments,
+        itemBuilder: (payment) => ListTile(
+          leading: CircleAvatar(
+            backgroundColor: _getPaymentStatusColor(payment.status),
+            child: Icon(_getPaymentStatusIcon(payment.status), color: Colors.white, size: 20),
+          ),
+          title: Text('MP ID: ${payment.mpPaymentId ?? "N/A"}', maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('\$${payment.transactionAmount.toStringAsFixed(2)} • ${DateFormat('dd/MMM HH:mm').format(payment.createdAt)}'),
+              Text('Orden: ${payment.orderId.substring(0, 8)}...', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            ],
+          ),
+          trailing: payment.status == PaymentStatusEnum.pending || payment.status.name == 'in_process'
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                      tooltip: 'Aprobar',
+                      onPressed: () => _updatePaymentStatus(payment, 'approved', 'accredited'),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.cancel, color: Colors.red),
+                      tooltip: 'Rechazar',
+                      onPressed: () => _updatePaymentStatus(payment, 'rejected', 'cc_rejected_other_reason'),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.block, color: Colors.grey),
+                      tooltip: 'Cancelar',
+                      onPressed: () => _updatePaymentStatus(payment, 'cancelled', 'by_admin'),
+                    ),
+                  ],
+                )
+              : Chip(
+                  label: Text(payment.status.name.toUpperCase()),
+                  backgroundColor: _getPaymentStatusColor(payment.status).withOpacity(0.2),
+                  labelStyle: TextStyle(color: _getPaymentStatusColor(payment.status), fontWeight: FontWeight.bold),
+                ),
+        ),
+      );
+
   Widget _buildDataList<T>({
     required List<T> data,
     required Widget Function(T) itemBuilder,
@@ -510,28 +628,56 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
     }
   }
 
-  IconData _getPaymentStatusIcon(PaymentStatus status) {
-    switch (status) {
-      case PaymentStatus.pending:
+  IconData _getPaymentStatusIcon(dynamic status) {
+    String statusName;
+    if (status is PaymentStatus) {
+      statusName = status.name;
+    } else if (status is PaymentStatusEnum) {
+      statusName = status.name;
+    } else {
+      statusName = status.toString();
+    }
+
+    switch (statusName) {
+      case 'pending':
+      case 'in_process':
         return Icons.pending;
-      case PaymentStatus.approved:
+      case 'approved':
         return Icons.check_circle;
-      case PaymentStatus.failed:
+      case 'failed':
+      case 'rejected':
+      case 'cancelled':
         return Icons.error;
-      case PaymentStatus.refunded:
+      case 'refunded':
         return Icons.replay;
+      default:
+        return Icons.help;
     }
   }
 
-  Color _getPaymentStatusColor(PaymentStatus status) {
-    switch (status) {
-      case PaymentStatus.pending:
+  Color _getPaymentStatusColor(dynamic status) {
+    String statusName;
+    if (status is PaymentStatus) {
+      statusName = status.name;
+    } else if (status is PaymentStatusEnum) {
+      statusName = status.name;
+    } else {
+      statusName = status.toString();
+    }
+
+    switch (statusName) {
+      case 'pending':
+      case 'in_process':
         return Colors.orange;
-      case PaymentStatus.approved:
+      case 'approved':
         return Colors.green;
-      case PaymentStatus.failed:
+      case 'failed':
+      case 'rejected':
+      case 'cancelled':
         return Colors.red;
-      case PaymentStatus.refunded:
+      case 'refunded':
+        return Colors.grey;
+      default:
         return Colors.grey;
     }
   }

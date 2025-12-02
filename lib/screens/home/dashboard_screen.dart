@@ -376,7 +376,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: 0.65, // Example value
+                    value: ((_currentUser?.points ?? 0) / 500).clamp(0.0, 1.0),
                     backgroundColor: Colors.black.withValues(alpha: 0.3),
                     valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00E676)), // Neon Green
                     minHeight: 6,
@@ -394,7 +394,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     Text(
-                      '65%',
+                      '${(((_currentUser?.points ?? 0) / 500).clamp(0.0, 1.0) * 100).toInt()}%',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 10,

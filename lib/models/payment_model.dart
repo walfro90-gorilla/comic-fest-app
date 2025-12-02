@@ -1,4 +1,4 @@
-enum PaymentStatusEnum { pending, approved, rejected, refunded, cancelled }
+enum PaymentStatusEnum { pending, approved, rejected, refunded, cancelled, failed }
 
 class PaymentModel {
   final String id;

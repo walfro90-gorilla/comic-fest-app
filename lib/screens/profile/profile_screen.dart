@@ -3,6 +3,7 @@ import 'package:comic_fest/models/user_model.dart';
 import 'package:comic_fest/screens/auth/login_screen.dart';
 import 'package:comic_fest/screens/admin/admin_panel_screen.dart';
 import 'package:comic_fest/services/user_service.dart';
+import 'package:comic_fest/screens/profile/payment_history_screen.dart';
 import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -143,7 +144,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         colorScheme,
                         icon: Icons.history,
                         title: 'Historial de Compras',
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PaymentHistoryScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildMenuCard(
                         theme,
