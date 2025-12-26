@@ -122,7 +122,7 @@ class SupabaseAuthManager extends AuthManager
       final google_sign_in_sdk.GoogleSignIn googleSignIn = google_sign_in_sdk.GoogleSignIn(
         // En Web, clientId es requerido. En móvil, serverClientId es el que se usa para obtener el ID Token para Supabase.
         clientId: kIsWeb ? googleClientId : null,
-        serverClientId: kIsWeb ? null : googleClientId,
+        serverClientId: googleClientId,
         scopes: const ['email', 'profile', 'openid'],
       );
       
