@@ -123,8 +123,14 @@ class SupabaseAuthManager extends AuthManager
         // En Web, clientId es requerido. En móvil, serverClientId es el que se usa para obtener el ID Token para Supabase.
         clientId: kIsWeb ? googleClientId : null,
         serverClientId: kIsWeb ? null : googleClientId,
+        scopes: const ['email', 'profile', 'openid'],
       );
       
+      // Forzar desconexión previa para limpiar estado en web
+      if (kIsWeb) {
+        await googleSignIn.signOut();
+      }
+
       final googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -136,6 +142,10 @@ class SupabaseAuthManager extends AuthManager
       final googleAuth = await googleUser.authentication;
       final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
+
+      debugPrint('🔑 Google Auth Debug:');
+      debugPrint('   Access Token: ${accessToken?.substring(0, 10)}...');
+      debugPrint('   ID Token: ${idToken != null ? "FOUND" : "MISSING"}');
 
       if (accessToken == null) {
         throw 'No Access Token found.';
