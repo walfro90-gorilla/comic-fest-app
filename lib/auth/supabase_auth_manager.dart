@@ -117,11 +117,11 @@ class SupabaseAuthManager extends AuthManager
   Future<UserModel?> signInWithGoogle(BuildContext context) async {
     try {
       // 1. Iniciar flujo nativo de Google
+      const googleClientId = '241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com';
       final google_sign_in_sdk.GoogleSignIn googleSignIn = google_sign_in_sdk.GoogleSignIn(
-        // serverClientId es necesario para obtener el ID Token válido para Supabase
-        // Este ID debe coincidir con el "Web Client ID" en Google Cloud Console
-        // y estar agregado en Supabase > Auth > Providers > Google
-        serverClientId: '241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com', 
+        // En Web, clientId es requerido. En móvil, serverClientId es el que se usa para obtener el ID Token para Supabase.
+        clientId: kIsWeb ? googleClientId : null,
+        serverClientId: googleClientId,
       );
       
       final googleUser = await googleSignIn.signIn();
