@@ -23,7 +23,7 @@ class PointsTransactionModel {
     return PointsTransactionModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      amount: json['amount'] as int,
+      amount: json['points_change'] as int,
       type: TransactionType.values.firstWhere(
         (e) => e.name == json['type'],
         orElse: () => TransactionType.earn,

@@ -26,6 +26,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  String _getUserLevel(int points) {
+    if (points < 1000) return 'NIVEL 1 • NOVATO';
+    if (points < 5000) return 'NIVEL 5 • FAN';
+    if (points < 20000) return 'NIVEL 10 • SUPER FAN';
+    return 'NIVEL 99 • LEYENDA';
+  }
+
   final UserService _userService = UserService();
   final EventService _eventService = EventService();
   final ExhibitorService _exhibitorService = ExhibitorService();
@@ -282,7 +289,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              'NIVEL 1 • NOVATO', // Placeholder logic for level
+                              _getUserLevel(_currentUser?.points ?? 0),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: const Color(0xFF43CBFF),
                                 fontWeight: FontWeight.bold,

@@ -3,7 +3,9 @@ import 'package:comic_fest/models/user_model.dart';
 import 'package:comic_fest/services/points_service.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:comic_fest/widgets/points_badge.dart';
+import 'package:comic_fest/widgets/points_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class PointsScreen extends StatefulWidget {
@@ -62,6 +64,8 @@ class _PointsScreenState extends State<PointsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildPointsHeader(theme, colorScheme),
+                    const SizedBox(height: 24),
+                    _buildReferralSection(theme, colorScheme),
                     const SizedBox(height: 24),
                     _buildHowToEarnSection(theme, colorScheme),
                     const SizedBox(height: 24),
@@ -139,38 +143,142 @@ class _PointsScreenState extends State<PointsScreen> {
         _buildEarnMethodCard(
           icon: Icons.confirmation_num,
           title: 'Compra de Boletos',
-          points: '10% del precio',
+          points: '10 pts por MXN', // Updated
           color: colorScheme.primary,
         ),
         const SizedBox(height: 12),
         _buildEarnMethodCard(
-          icon: Icons.shopping_bag,
-          title: 'Compras en Tienda',
-          points: '5% del precio',
-          color: colorScheme.secondary,
+          icon: Icons.group_add, // Updated icon
+          title: 'Invitar Amigos', // Updated title
+          points: '1000 pts',
+          color: Colors.amber, // Gold
         ),
         const SizedBox(height: 12),
         _buildEarnMethodCard(
           icon: Icons.how_to_vote,
           title: 'Votar en Paneles',
-          points: '+5 puntos',
+          points: '+50 puntos', // Updated
           color: colorScheme.tertiary,
         ),
         const SizedBox(height: 12),
         _buildEarnMethodCard(
           icon: Icons.qr_code_scanner,
-          title: 'Check-in en Eventos',
-          points: '+10 puntos',
+          title: 'Check-in en Stands',
+          points: '+150 puntos', // Updated
           color: Colors.green,
         ),
         const SizedBox(height: 12),
         _buildEarnMethodCard(
           icon: Icons.share,
           title: 'Compartir en Redes',
-          points: '+15 puntos',
-          color: Colors.orange,
+          points: '+100 puntos', // Updated
+          color: Colors.blueAccent,
         ),
       ],
+    );
+  }
+
+  Widget _buildReferralSection(ThemeData theme, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.amber.shade700, Colors.amber.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.star, color: Colors.white, size: 32),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '¡Tu Link de Oro!',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Gana 1000 pts por cada amigo que compre su boleto.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.link, color: Colors.white.withValues(alpha: 0.8)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'comicfest.app/ref/${_currentUser?.id ?? "..."}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontFamily: 'Courier',
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    if (_currentUser?.id != null) {
+                      Clipboard.setData(ClipboardData(
+                        text: 'https://comicfest.app/ref/${_currentUser!.id}',
+                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('¡Link copiado al portapapeles!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.copy, color: Colors.white),
+                  tooltip: 'Copiar Link',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
