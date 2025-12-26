@@ -117,34 +117,39 @@ class SupabaseAuthManager extends AuthManager
   @override
   Future<UserModel?> signInWithGoogle(BuildContext context) async {
     try {
-      // 1. Iniciar flujo nativo de Google
+      // ⚠️ WEB: Usar flujo de redirección de Supabase
+      if (kIsWeb) {
+        // Obtenemos la URL actual para redirigir ahí mismo (o a la raíz)
+        const redirectUrl = 'https://comic-fest-app.vercel.app/'; 
+        
+        await _client.auth.signInWithOAuth(
+          sb.OAuthProvider.google,
+          redirectTo: redirectUrl,
+          authScreenLaunchMode: sb.LaunchMode.platformDefault,
+        );
+        // En Web esto redirige fuera de la app, así que retornamos null por ahora.
+        // Al volver, la sesión se restaura automáticamente en main.dart/AuthGate.
+        return null; 
+      }
+
+      // ⚠️ MOBILE: Usar flujo nativo con Google Sign In Plugin
       const googleClientId = '241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com';
       final google_sign_in_sdk.GoogleSignIn googleSignIn = google_sign_in_sdk.GoogleSignIn(
-        // En Web, clientId es requerido. En móvil, serverClientId es el que se usa para obtener el ID Token para Supabase.
-        clientId: kIsWeb ? googleClientId : null,
         serverClientId: googleClientId,
         scopes: const ['email', 'profile', 'openid'],
       );
       
-      // Forzar desconexión previa para limpiar estado en web
-      if (kIsWeb) {
-        await googleSignIn.signOut();
-      }
-
       final googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
-        // El usuario canceló el inicio de sesión
         return null;
       }
 
-      // 2. Obtener credenciales de autenticación (tokens)
       final googleAuth = await googleUser.authentication;
       final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
 
-      debugPrint('🔑 Google Auth Debug:');
-      debugPrint('   Access Token: ${accessToken?.substring(0, 10)}...');
+      debugPrint('🔑 Google Auth Debug (Mobile):');
       debugPrint('   ID Token: ${idToken != null ? "FOUND" : "MISSING"}');
 
       if (accessToken == null) {
@@ -154,14 +159,12 @@ class SupabaseAuthManager extends AuthManager
         throw 'No ID Token found.';
       }
 
-      // 3. Autenticar con Supabase usando el ID Token
       final response = await _client.auth.signInWithIdToken(
         provider: sb.OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
 
-      // 4. Verificar y crear/obtener perfil
       if (response.user != null) {
         return await _fetchOrCreateProfile(response.user!);
       }
@@ -176,7 +179,7 @@ class SupabaseAuthManager extends AuthManager
     } catch (e) {
       debugPrint('❌ Google sign in error: $e');
       if (context.mounted) {
-        _showError(context, 'Error al conectar con Google. Verifica tu conexión.');
+        _showError(context, 'Error al conectar con Google.');
       }
       return null;
     }
