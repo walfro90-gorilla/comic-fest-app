@@ -99,6 +99,77 @@ class EventService {
     }
   }
 
+  Future<EventModel> createEvent(EventModel event) async {
+    try {
+      final response = await _supabase.client
+          .from('schedule_items')
+          .insert(event.toJson()..remove('id')) // Let DB generate ID
+          .select()
+          .single();
+
+      final newEvent = EventModel.fromJson(response);
+      
+      // Update local cache
+      final allEvents = await _getAllEvents();
+      allEvents.add(newEvent);
+      final eventsJson = allEvents.map((e) => e.toJson()).toList();
+      await _prefs?.setString(allEventsKey, jsonEncode(eventsJson));
+
+      debugPrint('✅ Event created: ${newEvent.title}');
+      return newEvent;
+    } catch (e) {
+      debugPrint('❌ Error creating event: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateEvent(EventModel event) async {
+    try {
+      final updates = event.toJson();
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _supabase.client
+          .from('schedule_items')
+          .update(updates)
+          .eq('id', event.id);
+
+      // Update local cache
+      final allEvents = await _getAllEvents();
+      final index = allEvents.indexWhere((e) => e.id == event.id);
+      if (index != -1) {
+        allEvents[index] = event;
+        final eventsJson = allEvents.map((e) => e.toJson()).toList();
+        await _prefs?.setString(allEventsKey, jsonEncode(eventsJson));
+      }
+
+      debugPrint('✅ Event updated: ${event.id}');
+    } catch (e) {
+      debugPrint('❌ Error updating event: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    try {
+      // Soft delete by setting is_active to false
+      await _supabase.client
+          .from('schedule_items')
+          .update({'is_active': false})
+          .eq('id', eventId);
+
+      // Update local cache
+      final allEvents = await _getAllEvents();
+      allEvents.removeWhere((e) => e.id == eventId);
+      final eventsJson = allEvents.map((e) => e.toJson()).toList();
+      await _prefs?.setString(allEventsKey, jsonEncode(eventsJson));
+
+      debugPrint('✅ Event deleted (soft): $eventId');
+    } catch (e) {
+        debugPrint('❌ Error deleting event: $e');
+        rethrow;
+    }
+  }
+
   Future<List<EventModel>> _enrichWithVoteData(List<EventModel> events) async {
     final eventIds = events.map((e) => e.id).toList();
     final voteCounts = await _votingService.getVoteCounts(eventIds);

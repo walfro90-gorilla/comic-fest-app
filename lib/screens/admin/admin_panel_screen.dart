@@ -2,6 +2,7 @@ import 'package:comic_fest/models/user_model.dart';
 import 'package:comic_fest/models/event_model.dart';
 import 'package:comic_fest/models/contestant_model.dart';
 import 'package:comic_fest/models/ticket_model.dart';
+import 'package:comic_fest/models/ticket_type_model.dart';
 import 'package:comic_fest/models/product_model.dart';
 import 'package:comic_fest/models/panel_vote_model.dart';
 import 'package:comic_fest/models/points_transaction_model.dart';
@@ -9,6 +10,7 @@ import 'package:comic_fest/models/payment_model.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:comic_fest/services/seed_service.dart';
 import 'package:comic_fest/services/event_service.dart';
+import 'package:comic_fest/services/product_service.dart';
 import 'package:comic_fest/services/contestant_service.dart';
 import 'package:comic_fest/services/ticket_service.dart';
 import 'package:comic_fest/services/points_service.dart';
@@ -39,12 +41,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
   List<EventModel> _events = [];
   List<ProductModel> _products = [];
   List<TicketModel> _tickets = [];
+  List<TicketTypeModel> _ticketTypes = [];
   List<ContestantModel> _contestants = [];
   List<PanelVoteModel> _votes = [];
   List<PointsTransactionModel> _transactions = [];
   List<PaymentModel> _payments = [];
   
   bool _isLoading = true;
+  bool _showTicketTypes = true;
   String _filterRole = 'all';
 
   @override
@@ -77,7 +81,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
         await _loadProducts();
         break;
       case 3:
-        await _loadTickets();
+        await Future.wait([
+          _loadTickets(),
+          _loadTicketTypes(),
+        ]);
         break;
       case 4:
         await _loadContestants();
@@ -156,6 +163,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
           SnackBar(content: Text('Error al cargar productos: $e'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _loadTicketTypes() async {
+    try {
+      final types = await _ticketService.getAvailableTicketTypes(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _ticketTypes = types;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading ticket types: $e');
     }
   }
 
@@ -390,14 +410,45 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
                 _buildPaymentsTab(),
               ],
             ),
-      floatingActionButton: _tabController.index == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => _showCreateUserDialog(),
-              icon: const Icon(Icons.person_add),
-              label: const Text('Crear Usuario'),
-            )
-          : null,
+      floatingActionButton: _getFloatingActionButton(),
     );
+  }
+
+  Widget? _getFloatingActionButton() {
+    switch (_tabController.index) {
+      case 0: // Users
+        return FloatingActionButton.extended(
+          onPressed: () => _showCreateUserDialog(),
+          icon: const Icon(Icons.person_add),
+          label: const Text('Crear Usuario'),
+        );
+      case 1: // Events
+        return FloatingActionButton.extended(
+          onPressed: () => _showEventDialog(),
+          icon: const Icon(Icons.event_available),
+          label: const Text('Crear Evento'),
+        );
+      case 2: // Products
+        return FloatingActionButton.extended(
+          onPressed: () => _showProductDialog(),
+          icon: const Icon(Icons.add_shopping_cart),
+          label: const Text('Crear Producto'),
+        );
+      case 3: // Tickets
+        return FloatingActionButton.extended(
+          onPressed: () => _showTicketTypeDialog(),
+          icon: const Icon(Icons.add_card),
+          label: const Text('Crear Tipo Ticket'),
+        );
+      case 4: // Contestants
+        return FloatingActionButton.extended(
+          onPressed: () => _showContestantDialog(),
+          icon: const Icon(Icons.person_add_alt),
+          label: const Text('Registrar Concursante'),
+        );
+      default:
+        return null;
+    }
   }
 
   Widget _buildUsersTab() => Column(
@@ -421,7 +472,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
                 ),
                 title: Text(event.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                 subtitle: Text('${event.category.name.toUpperCase()} • ${DateFormat('dd/MMM HH:mm').format(event.startTime)}'),
-                trailing: event.isActive ? const Icon(Icons.check_circle, color: Colors.green) : const Icon(Icons.cancel, color: Colors.grey),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _showEventDialog(event: event),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _confirmDeleteEvent(event),
+                    ),
+                  ],
+                ),
+                onTap: () => _showEventDialog(event: event),
               ),
             ),
           ),
@@ -448,16 +512,80 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
                       Text('Puntos: ${product.pointsPrice}', style: TextStyle(color: Colors.amber, fontSize: 12)),
                   ],
                 ),
-                trailing: product.isExclusive
-                    ? const Chip(label: Text('Exclusivo'), backgroundColor: Colors.orange, padding: EdgeInsets.zero)
-                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (product.isExclusive)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: Chip(label: Text('Exclusivo'), backgroundColor: Colors.orange, padding: EdgeInsets.zero),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _showProductDialog(product: product),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _confirmDeleteProduct(product),
+                    ),
+                  ],
+                ),
+                onTap: () => _showProductDialog(product: product),
               ),
             ),
           ),
         ],
       );
 
-  Widget _buildTicketsTab() => _buildDataList<TicketModel>(
+  Widget _buildTicketsTab() => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: ToggleButtons(
+              isSelected: [_showTicketTypes, !_showTicketTypes],
+              onPressed: (index) => setState(() => _showTicketTypes = index == 0),
+              borderRadius: BorderRadius.circular(8),
+              children: const [
+                Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Tipos de Ticket')),
+                Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Tickets Vendidos')),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _showTicketTypes
+                ? _buildTicketTypesList()
+                : _buildTicketsList(),
+          ),
+        ],
+      );
+
+  Widget _buildTicketTypesList() => _buildDataList<TicketTypeModel>(
+        data: _ticketTypes,
+        itemBuilder: (type) => ListTile(
+          leading: CircleAvatar(
+            backgroundColor: type.isActive ? Colors.green : Colors.grey,
+            child: const Icon(Icons.confirmation_number, color: Colors.white, size: 20),
+          ),
+          title: Text(type.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text('\$${type.price.toStringAsFixed(2)} • Disp: ${type.stockAvailable}/${type.stockTotal}'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () => _showTicketTypeDialog(ticketType: type),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _confirmDeleteTicketType(type),
+              ),
+            ],
+          ),
+          onTap: () => _showTicketTypeDialog(ticketType: type),
+        ),
+      );
+
+  Widget _buildTicketsList() => _buildDataList<TicketModel>(
         data: _tickets,
         itemBuilder: (ticket) => ListTile(
           leading: CircleAvatar(
@@ -479,7 +607,22 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
           ),
           title: Text(contestant.name, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(contestant.description ?? 'Sin descripción', maxLines: 1, overflow: TextOverflow.ellipsis),
-          trailing: Chip(label: Text('${contestant.voteCount} votos'), padding: EdgeInsets.zero),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Chip(label: Text('${contestant.voteCount} votos'), padding: EdgeInsets.zero),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () => _showContestantDialog(contestant: contestant),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _confirmDeleteContestant(contestant),
+              ),
+            ],
+          ),
+          onTap: () => _showContestantDialog(contestant: contestant),
         ),
       );
 
@@ -969,6 +1112,174 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
             child: const Text('Eliminar'),
           ),
         ],
+      ),
+    );
+  }
+
+  // --- EVENT HELPERS ---
+  void _showEventDialog({EventModel? event}) {
+    showDialog(
+      context: context,
+      builder: (context) => EventDialog(
+        event: event,
+        onEventSaved: _loadEvents,
+      ),
+    );
+  }
+
+  void _confirmDeleteEvent(EventModel event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Evento'),
+        content: Text('¿Eliminar "${event.title}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _eventService.deleteEvent(event.id);
+                _loadEvents();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Evento eliminado')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- PRODUCT HELPERS ---
+  void _showProductDialog({ProductModel? product}) {
+    showDialog(
+      context: context,
+      builder: (context) => ProductDialog(
+        product: product,
+        onProductSaved: _loadProducts,
+      ),
+    );
+  }
+
+  void _confirmDeleteProduct(ProductModel product) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Producto'),
+        content: Text('¿Eliminar "${product.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                final service = ProductService(); // Or inject
+                await service.deleteProduct(product.id);
+                _loadProducts();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Producto eliminado')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- CONTESTANT HELPERS ---
+  void _showContestantDialog({ContestantModel? contestant}) {
+    showDialog(
+      context: context,
+      builder: (context) => ContestantDialog(
+        contestant: contestant,
+        onContestantSaved: _loadContestants,
+      ),
+    );
+  }
+
+  void _confirmDeleteContestant(ContestantModel contestant) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Concursante'),
+        content: Text('¿Eliminar a "${contestant.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _contestantService.deleteContestant(contestant.id);
+                _loadContestants();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Concursante eliminado')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- TICKET TYPE HELPERS ---
+  void _confirmDeleteTicketType(TicketTypeModel type) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Tipo de Ticket'),
+        content: Text('¿Eliminar "${type.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _ticketService.deleteTicketType(type.id);
+                _loadTicketTypes(); // Refresh list
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tipo de ticket eliminado')));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTicketTypeDialog({TicketTypeModel? ticketType}) {
+    showDialog(
+      context: context,
+      builder: (context) => TicketTypeDialog(
+        ticketType: ticketType,
+        onSaved: () {
+          _loadTicketTypes();
+          _loadTickets();
+        },
       ),
     );
   }
@@ -1527,3 +1838,599 @@ class _DataManagementDialogState extends State<DataManagementDialog> {
     );
   }
 }
+
+class EventDialog extends StatefulWidget {
+  final EventModel? event;
+  final VoidCallback onEventSaved;
+
+  const EventDialog({super.key, this.event, required this.onEventSaved});
+
+  @override
+  State<EventDialog> createState() => _EventDialogState();
+}
+
+class _EventDialogState extends State<EventDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _titleController;
+  late TextEditingController _descController;
+  late DateTime _startTime;
+  late DateTime _endTime;
+  EventCategory _category = EventCategory.panel;
+  bool _isActive = true;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.event;
+    _titleController = TextEditingController(text: e?.title);
+    _descController = TextEditingController(text: e?.description);
+    _startTime = e?.startTime ?? DateTime.now();
+    _endTime = e?.endTime ?? DateTime.now().add(const Duration(hours: 1));
+    _category = e?.category ?? EventCategory.panel;
+    _isActive = e?.isActive ?? true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.event == null ? 'Crear Evento' : 'Editar Evento'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Título'),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<EventCategory>(
+                value: _category,
+                decoration: const InputDecoration(labelText: 'Categoría'),
+                items: EventCategory.values.map((c) {
+                  return DropdownMenuItem(value: c, child: Text(c.name.toUpperCase()));
+                }).toList(),
+                onChanged: (v) => setState(() => _category = v!),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('Inicio'),
+                subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(_startTime)),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () => _pickDateTime(true),
+              ),
+              ListTile(
+                title: const Text('Fin'),
+                subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(_endTime)),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () => _pickDateTime(false),
+              ),
+              SwitchListTile(
+                title: const Text('Activo'),
+                value: _isActive,
+                onChanged: (v) => setState(() => _isActive = v),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _save,
+          child: _isLoading ? const CircularProgressIndicator() : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickDateTime(bool isStart) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: isStart ? _startTime : _endTime,
+      firstDate: DateTime(2023),
+      lastDate: DateTime(2030),
+    );
+    if (date == null) return;
+    
+    if (!mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(isStart ? _startTime : _endTime),
+    );
+    if (time == null) return;
+
+    setState(() {
+      final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      if (isStart) {
+        _startTime = dt;
+      } else {
+        _endTime = dt;
+      }
+    });
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    
+    try {
+      final service = EventService();
+      final newEvent = EventModel(
+        id: widget.event?.id ?? '', // ID handled by service/DB for create
+        title: _titleController.text,
+        description: _descController.text,
+        startTime: _startTime,
+        endTime: _endTime,
+        category: _category,
+        isActive: _isActive,
+        updatedAt: DateTime.now(),
+        createdAt: widget.event?.createdAt ?? DateTime.now(),
+        locationId: widget.event?.locationId, // Keep existing if any
+        artistId: widget.event?.artistId,
+        imageUrl: widget.event?.imageUrl,
+      );
+
+      if (widget.event == null) {
+        await service.createEvent(newEvent);
+      } else {
+        await service.updateEvent(newEvent);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onEventSaved();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Evento guardado')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+}
+
+class ProductDialog extends StatefulWidget {
+  final ProductModel? product;
+  final VoidCallback onProductSaved;
+
+  const ProductDialog({super.key, this.product, required this.onProductSaved});
+
+  @override
+  State<ProductDialog> createState() => _ProductDialogState();
+}
+
+class _ProductDialogState extends State<ProductDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late TextEditingController _priceController;
+  late TextEditingController _stockController;
+  late TextEditingController _pointsController;
+  late TextEditingController _imageController;
+  bool _isExclusive = false;
+  bool _isActive = true;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.product;
+    _nameController = TextEditingController(text: p?.name);
+    _descController = TextEditingController(text: p?.description);
+    _priceController = TextEditingController(text: p?.price.toString());
+    _stockController = TextEditingController(text: p?.stock.toString());
+    _pointsController = TextEditingController(text: p?.pointsPrice?.toString());
+    _imageController = TextEditingController(text: p?.imageUrl);
+    _isExclusive = p?.isExclusive ?? false;
+    _isActive = p?.isActive ?? true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.product == null ? 'Crear Producto' : 'Editar Producto'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                maxLines: 2,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _priceController,
+                      decoration: const InputDecoration(labelText: 'Precio \$'),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _stockController,
+                      decoration: const InputDecoration(labelText: 'Stock'),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                    ),
+                  ),
+                ],
+              ),
+              TextFormField(
+                controller: _pointsController,
+                decoration: const InputDecoration(labelText: 'Precio en Puntos (Opcional)'),
+                keyboardType: TextInputType.number,
+              ),
+              TextFormField(
+                controller: _imageController,
+                decoration: const InputDecoration(labelText: 'URL Imagen'),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+              SwitchListTile(
+                title: const Text('Exclusivo'),
+                value: _isExclusive,
+                onChanged: (v) => setState(() => _isExclusive = v),
+              ),
+              SwitchListTile(
+                title: const Text('Activo'),
+                value: _isActive,
+                onChanged: (v) => setState(() => _isActive = v),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _save,
+          child: _isLoading ? const CircularProgressIndicator() : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final service = ProductService();
+      final newProduct = ProductModel(
+        id: widget.product?.id ?? '',
+        name: _nameController.text,
+        description: _descController.text,
+        price: double.parse(_priceController.text),
+        stock: int.parse(_stockController.text),
+        pointsPrice: _pointsController.text.isNotEmpty ? int.parse(_pointsController.text) : null,
+        imageUrl: _imageController.text,
+        isExclusive: _isExclusive,
+        isActive: _isActive,
+        updatedAt: DateTime.now(),
+        createdAt: widget.product?.createdAt ?? DateTime.now(),
+      );
+
+      if (widget.product == null) {
+        await service.createProduct(newProduct);
+      } else {
+        await service.updateProduct(newProduct);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onProductSaved();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Producto guardado')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+}
+
+class ContestantDialog extends StatefulWidget {
+  final ContestantModel? contestant;
+  final VoidCallback onContestantSaved;
+
+  const ContestantDialog({super.key, this.contestant, required this.onContestantSaved});
+
+  @override
+  State<ContestantDialog> createState() => _ContestantDialogState();
+}
+
+class _ContestantDialogState extends State<ContestantDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late TextEditingController _numberController;
+  late TextEditingController _imageController;
+  String? _selectedEventId;
+  List<EventModel> _availableEvents = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final c = widget.contestant;
+    _nameController = TextEditingController(text: c?.name);
+    _descController = TextEditingController(text: c?.description);
+    _numberController = TextEditingController(text: c?.contestantNumber.toString());
+    _imageController = TextEditingController(text: c?.imageUrl);
+    _selectedEventId = c?.scheduleItemId;
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    final events = await EventService().getEvents();
+    // Filter only events that can have contestants (Concurso, Torneo)
+    final contestEvents = events.where((e) => 
+      e.category == EventCategory.concurso || e.category == EventCategory.torneo
+    ).toList();
+    
+    if (mounted) {
+      setState(() {
+        _availableEvents = contestEvents;
+        // If no event selected and creating new, select first available
+        if (_selectedEventId == null && _availableEvents.isNotEmpty) {
+          _selectedEventId = _availableEvents.first.id;
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.contestant == null ? 'Registrar Concursante' : 'Editar Concursante'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                value: _selectedEventId,
+                decoration: const InputDecoration(labelText: 'Evento (Concurso/Torneo)'),
+                items: _availableEvents.map((e) {
+                  return DropdownMenuItem(value: e.id, child: Text(e.title, overflow: TextOverflow.ellipsis));
+                }).toList(),
+                onChanged: (v) => setState(() => _selectedEventId = v),
+                validator: (v) => v == null ? 'Selecciona un evento' : null,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                maxLines: 2,
+              ),
+              TextFormField(
+                controller: _numberController,
+                decoration: const InputDecoration(labelText: 'Número de Participante'),
+                keyboardType: TextInputType.number,
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+              TextFormField(
+                controller: _imageController,
+                decoration: const InputDecoration(labelText: 'URL Imagen (Opcional)'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _save,
+          child: _isLoading ? const CircularProgressIndicator() : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final service = ContestantService();
+      
+      if (widget.contestant == null) {
+        await service.createContestant(
+          scheduleItemId: _selectedEventId!,
+          name: _nameController.text,
+          description: _descController.text,
+          imageUrl: _imageController.text.isNotEmpty ? _imageController.text : null,
+          contestantNumber: int.parse(_numberController.text),
+        );
+      } else {
+        await service.updateContestant(
+          contestantId: widget.contestant!.id,
+          name: _nameController.text,
+          description: _descController.text,
+          imageUrl: _imageController.text.isNotEmpty ? _imageController.text : null,
+          contestantNumber: int.parse(_numberController.text),
+        );
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onContestantSaved();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Concursante guardado')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+}
+
+class TicketTypeDialog extends StatefulWidget {
+  final TicketTypeModel? ticketType;
+  final VoidCallback onSaved;
+
+  const TicketTypeDialog({super.key, this.ticketType, required this.onSaved});
+
+  @override
+  State<TicketTypeDialog> createState() => _TicketTypeDialogState();
+}
+
+class _TicketTypeDialogState extends State<TicketTypeDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late TextEditingController _priceController;
+  late TextEditingController _stockController;
+  bool _isEarlyBird = false;
+  bool _isActive = true;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final t = widget.ticketType;
+    _nameController = TextEditingController(text: t?.name);
+    _descController = TextEditingController(text: t?.description);
+    _priceController = TextEditingController(text: t?.price.toString());
+    _stockController = TextEditingController(text: t?.stockTotal.toString());
+    _isEarlyBird = t?.isEarlyBird ?? false;
+    _isActive = t?.isActive ?? true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.ticketType == null ? 'Crear Tipo de Ticket' : 'Editar Tipo de Ticket'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
+              ),
+              TextFormField(
+                controller: _descController,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                maxLines: 2,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _priceController,
+                      decoration: const InputDecoration(labelText: 'Precio \$'),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _stockController,
+                      decoration: const InputDecoration(labelText: 'Stock Total'),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                    ),
+                  ),
+                ],
+              ),
+              SwitchListTile(
+                title: const Text('Precio de preventa (Early Bird)'),
+                value: _isEarlyBird,
+                onChanged: (v) => setState(() => _isEarlyBird = v),
+              ),
+              SwitchListTile(
+                title: const Text('Activo'),
+                value: _isActive,
+                onChanged: (v) => setState(() => _isActive = v),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _save,
+          child: _isLoading ? const CircularProgressIndicator() : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final service = TicketService();
+      final newType = TicketTypeModel(
+        id: widget.ticketType?.id ?? '',
+        name: _nameController.text,
+        description: _descController.text,
+        price: double.parse(_priceController.text),
+        stockTotal: int.parse(_stockController.text),
+        stockAvailable: widget.ticketType?.stockAvailable ?? int.parse(_stockController.text), // Available defaults to Total on create
+        isEarlyBird: _isEarlyBird,
+        isActive: _isActive,
+        createdAt: widget.ticketType?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      if (widget.ticketType == null) {
+        await service.createTicketType(newType);
+      } else {
+        await service.updateTicketType(newType);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSaved();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tipo de ticket guardado')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+}
+

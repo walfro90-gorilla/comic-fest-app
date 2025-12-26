@@ -1,6 +1,17 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.comics (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  prompt text NOT NULL,
+  image_url text,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text, 'failed'::text])),
+  model_used text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT comics_pkey PRIMARY KEY (id),
+  CONSTRAINT comics_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
 CREATE TABLE public.contest_entries (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   contest_id uuid NOT NULL,
@@ -169,6 +180,7 @@ CREATE TABLE public.profiles (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   points integer NOT NULL DEFAULT 0,
+  credits integer NOT NULL DEFAULT 0,
   CONSTRAINT profiles_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.promotions (

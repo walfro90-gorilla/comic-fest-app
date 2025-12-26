@@ -7,6 +7,7 @@ class ProductModel {
   final String imageUrl;
   final int stock;
   final bool isExclusive;
+  final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +20,7 @@ class ProductModel {
     required this.imageUrl,
     required this.stock,
     this.isExclusive = false,
+    this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -33,6 +35,7 @@ class ProductModel {
       imageUrl: json['image_url'] as String,
       stock: json['stock'] as int,
       isExclusive: json['is_exclusive'] as bool? ?? false,
+      isActive: json['is_active'] as bool? ?? true,
       createdAt: json['created_at'] is String
           ? DateTime.parse(json['created_at'])
           : (json['created_at'] as DateTime),
@@ -51,6 +54,7 @@ class ProductModel {
         'image_url': imageUrl,
         'stock': stock,
         'is_exclusive': isExclusive,
+        'is_active': isActive,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
@@ -64,6 +68,7 @@ class ProductModel {
     String? imageUrl,
     int? stock,
     bool? isExclusive,
+    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) =>
@@ -76,6 +81,7 @@ class ProductModel {
         imageUrl: imageUrl ?? this.imageUrl,
         stock: stock ?? this.stock,
         isExclusive: isExclusive ?? this.isExclusive,
+        isActive: isActive ?? this.isActive,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );

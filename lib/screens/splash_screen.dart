@@ -71,17 +71,11 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.festival,
-              size: 120,
-              color: colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Comic Fest',
-              style: theme.textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40.0),
+              child: Image.asset(
+                'assets/icons/comic_fest_logo.png',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 48),

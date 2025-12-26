@@ -48,7 +48,7 @@ mixin AppleSignInManager on AuthManager {
 }
 
 // Google Sign-In authentication (all platforms)
-mixin GoogleSignInManager on AuthManager {
+mixin GoogleAuthManagerMixin on AuthManager {
   Future<UserModel?> signInWithGoogle(BuildContext context);
 }
 

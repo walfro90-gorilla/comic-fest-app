@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in/google_sign_in.dart' as google_sign_in_sdk;
 import 'package:comic_fest/auth/auth_manager.dart';
 import 'package:comic_fest/models/user_model.dart';
 import 'package:comic_fest/supabase/supabase_config.dart';
 import 'package:comic_fest/services/user_service.dart';
 
 class SupabaseAuthManager extends AuthManager
-    with EmailSignInManager, GoogleSignInManager {
+    with EmailSignInManager, GoogleAuthManagerMixin {
   final sb.SupabaseClient _client = SupabaseConfig.client;
   final UserService _userService = UserService();
 
@@ -117,7 +117,7 @@ class SupabaseAuthManager extends AuthManager
   Future<UserModel?> signInWithGoogle(BuildContext context) async {
     try {
       // 1. Iniciar flujo nativo de Google
-      final GoogleSignIn googleSignIn = GoogleSignIn(
+      final google_sign_in_sdk.GoogleSignIn googleSignIn = google_sign_in_sdk.GoogleSignIn(
         // serverClientId es necesario para obtener el ID Token válido para Supabase
         // Este ID debe coincidir con el "Web Client ID" en Google Cloud Console
         // y estar agregado en Supabase > Auth > Providers > Google

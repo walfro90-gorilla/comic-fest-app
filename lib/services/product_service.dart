@@ -85,13 +85,30 @@ class ProductService {
     try {
       final response = await _supabase.client
           .from('products')
-          .insert(product.toJson())
+          .insert(product.toJson()..remove('id'))
           .select()
           .single();
 
       return ProductModel.fromJson(response);
     } catch (e) {
       debugPrint('❌ Error creating product: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateProduct(ProductModel product) async {
+    try {
+      final updates = product.toJson();
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _supabase.client
+          .from('products')
+          .update(updates)
+          .eq('id', product.id);
+      
+      debugPrint('✅ Product updated: ${product.id}');
+    } catch (e) {
+      debugPrint('❌ Error updating product: $e');
       rethrow;
     }
   }

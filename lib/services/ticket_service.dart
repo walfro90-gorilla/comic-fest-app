@@ -46,7 +46,6 @@ class TicketService {
       final response = await _supabase.client
           .from('ticket_types')
           .select()
-          .eq('is_active', true)
           .order('display_order', ascending: true);
 
       final types = (response as List)
@@ -62,6 +61,65 @@ class TicketService {
     } catch (e) {
       debugPrint('❌ Failed to fetch ticket types: $e');
       return [];
+    }
+  }
+
+  Future<TicketTypeModel> createTicketType(TicketTypeModel type) async {
+    try {
+      final response = await _supabase.client
+          .from('ticket_types')
+          .insert(type.toJson()..remove('id'))
+          .select()
+          .single();
+
+      final newType = TicketTypeModel.fromJson(response);
+      
+      // Force refresh cache
+      await getAvailableTicketTypes(forceRefresh: true);
+
+      debugPrint('✅ Ticket type created: ${newType.name}');
+      return newType;
+    } catch (e) {
+      debugPrint('❌ Error creating ticket type: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateTicketType(TicketTypeModel type) async {
+    try {
+      final updates = type.toJson();
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _supabase.client
+          .from('ticket_types')
+          .update(updates)
+          .eq('id', type.id);
+
+      // Force refresh cache
+      await getAvailableTicketTypes(forceRefresh: true);
+      
+      debugPrint('✅ Ticket type updated: ${type.id}');
+    } catch (e) {
+      debugPrint('❌ Error updating ticket type: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTicketType(String typeId) async {
+    try {
+      // Soft delete
+      await _supabase.client
+          .from('ticket_types')
+          .update({'is_active': false})
+          .eq('id', typeId);
+
+      // Force refresh cache
+      await getAvailableTicketTypes(forceRefresh: true);
+      
+      debugPrint('✅ Ticket type deleted (soft): $typeId');
+    } catch (e) {
+      debugPrint('❌ Error deleting ticket type: $e');
+      rethrow;
     }
   }
 
