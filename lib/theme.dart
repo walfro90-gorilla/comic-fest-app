@@ -42,7 +42,6 @@ class DarkModeColors {
   static const darkAppBarBackground = Color(0xFF1E293B);
   static const darkOnAppBar = Color(0xFFF1F5F9);
 }
-
 class FontSizes {
   static const double displayLarge = 57.0;
   static const double displayMedium = 45.0;
