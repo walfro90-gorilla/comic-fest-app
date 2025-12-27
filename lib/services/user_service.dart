@@ -47,6 +47,27 @@ class UserService {
     }
   }
 
+  /// Forces a fresh fetch of the user profile from Supabase and updates local cache
+  Future<void> fetchUserProfile() async {
+    if (_prefs == null) await init();
+    final userId = _supabase.userId;
+    if (userId == null) return;
+
+    try {
+      final response = await _supabase.client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
+
+      final user = UserModel.fromJson(response);
+      await _prefs!.setString('$keyPrefix$userId', jsonEncode(user.toJson()));
+      debugPrint('✅ User profile force-refreshed from Supabase');
+    } catch (e) {
+      debugPrint('⚠️ Error fetching user profile: $e');
+    }
+  }
+
   Future<void> updateUserProfile({
     String? username,
     String? avatarUrl,
