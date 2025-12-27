@@ -5,7 +5,8 @@ import 'package:comic_fest/models/points_transaction_model.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:comic_fest/models/product_model.dart'; // Import ProductModel
+import 'package:comic_fest/models/order_model.dart'; // Import OrderModel
+import 'package:comic_fest/models/product_model.dart';
 import 'package:uuid/uuid.dart';
 
 class PointsService {
@@ -151,6 +152,34 @@ class PointsService {
     }
   }
 
+
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  /// Fetches user's redemption history (orders)
+  Future<List<OrderModel>> fetchMyOrders() async {
+    final userId = _supabase.userId;
+    if (userId == null) return [];
+
+    try {
+      final response = await _supabase.client
+          .from('orders')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((json) => OrderModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching orders: $e');
+      return [];
+    }
+  }
 
   Future<List<PointsTransactionModel>> getTransactionHistory() async {
     if (_prefs == null) await init();

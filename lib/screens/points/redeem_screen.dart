@@ -1,4 +1,6 @@
 import 'package:comic_fest/models/product_model.dart';
+import 'package:comic_fest/models/product_model.dart'; // Import
+import 'package:comic_fest/screens/points/my_orders_screen.dart'; // Import
 import 'package:comic_fest/services/points_service.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:flutter/material.dart';
@@ -114,8 +116,18 @@ class _RedeemScreenState extends State<RedeemScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tienda de Recompensas'),
+        title: const Text('Tienda'),
         actions: [
+            IconButton(
+                icon: const Icon(Icons.confirmation_num_outlined),
+                tooltip: 'Mis Premios',
+                onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MyOrdersScreen()),
+                    );
+                },
+            ),
             Center(
             child: Padding(
                 padding: const EdgeInsets.only(right: 16.0),
