@@ -1,5 +1,6 @@
 import 'package:comic_fest/models/points_transaction_model.dart';
 import 'package:comic_fest/models/user_model.dart';
+import 'package:comic_fest/screens/points/redeem_screen.dart'; // Import
 import 'package:comic_fest/services/points_service.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:comic_fest/widgets/points_badge.dart';
@@ -122,6 +123,27 @@ class _PointsScreenState extends State<PointsScreen> {
             'puntos acumulados',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+                    const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const RedeemScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.shopping_bag_outlined),
+            label: const Text('CANJEAR'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: colorScheme.tertiary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
+              ),
             ),
           ),
         ],

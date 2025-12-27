@@ -5,6 +5,7 @@ import 'package:comic_fest/models/points_transaction_model.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:comic_fest/models/product_model.dart'; // Import ProductModel
 import 'package:uuid/uuid.dart';
 
 class PointsService {
@@ -97,6 +98,59 @@ class PointsService {
 
     debugPrint('✅ Spent $amount points: $reason');
   }
+
+  /// Fetches available rewards (products with points_price > 0)
+  Future<List<ProductModel>> fetchRewards() async {
+    try {
+      final response = await _supabase.client
+          .from('products')
+          .select()
+          .gt('points_price', 0)
+          .gt('stock', 0)
+          .eq('is_active', true)
+          .order('points_price', ascending: true);
+
+      return (response as List)
+          .map((json) => ProductModel.fromJson(json))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ Error fetching rewards: $e');
+      return [];
+    }
+  }
+
+  /// Redeems a reward using the secure SQL function
+  Future<Map<String, dynamic>> redeemReward(String productId) async {
+    if (_prefs == null) await init();
+    final userId = _supabase.userId;
+    if (userId == null) throw Exception('No authenticated user');
+
+    try {
+      // Call the secure stored procedure 'redeem_reward'
+      final response = await _supabase.client.rpc(
+        'redeem_reward',
+        params: {
+          'p_user_id': userId,
+          'p_product_id': productId,
+        },
+      );
+
+      // Force update user points locally to reflect change immediately
+      if (response['success'] == true) {
+        final newPoints = response['new_points'] as int;
+        await _userService.fetchUserProfile(); // Refresh full profile to be safe
+      }
+
+      return response as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('❌ Error redeeming reward: $e');
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
+  }
+
 
   Future<List<PointsTransactionModel>> getTransactionHistory() async {
     if (_prefs == null) await init();
