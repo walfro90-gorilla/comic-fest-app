@@ -152,14 +152,6 @@ class PointsService {
     }
   }
 
-
-      return {
-        'success': false,
-        'message': 'Error de conexión: $e',
-      };
-    }
-  }
-
   /// Fetches user's redemption history (orders)
   Future<List<OrderModel>> fetchMyOrders() async {
     final userId = _supabase.userId;
