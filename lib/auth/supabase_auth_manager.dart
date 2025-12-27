@@ -120,7 +120,8 @@ class SupabaseAuthManager extends AuthManager
       // ⚠️ WEB: Usar flujo de redirección de Supabase
       if (kIsWeb) {
         // Obtenemos la URL actual para redirigir ahí mismo (o a la raíz)
-        const redirectUrl = 'https://comic-fest-app.vercel.app/'; 
+        // Obtenemos la URL actual dinámicamente (localhost o vercel)
+        final redirectUrl = Uri.base.origin;
         
         await _client.auth.signInWithOAuth(
           sb.OAuthProvider.google,
