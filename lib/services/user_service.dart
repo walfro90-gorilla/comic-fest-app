@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:comic_fest/core/supabase_service.dart';
 import 'package:comic_fest/models/user_model.dart';
 import 'package:flutter/foundation.dart';
@@ -138,6 +139,35 @@ class UserService {
       debugPrint('✅ Points updated on Supabase');
     } catch (e) {
       debugPrint('⚠️ Points updated locally, will sync later: $e');
+    }
+  }
+
+  Future<String> uploadAvatar(File imageFile) async {
+    final userId = _supabase.userId;
+    if (userId == null) throw Exception('No authenticated user');
+
+    final fileExt = imageFile.path.split('.').last;
+    final fileName = '$userId-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final filePath = 'avatars/$fileName';
+
+    try {
+      // 1. Upload to Supabase Storage
+      await _supabase.client.storage
+          .from('avatars')
+          .upload(filePath, imageFile);
+
+      // 2. Get Public URL
+      final avatarUrl = _supabase.client.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+      // 3. Update Profile
+      await updateUserProfile(avatarUrl: avatarUrl);
+
+      return avatarUrl;
+    } catch (e) {
+      debugPrint('❌ Avatar upload failed: $e');
+      rethrow;
     }
   }
 

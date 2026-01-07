@@ -22,6 +22,8 @@ import 'package:comic_fest/screens/points/points_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -155,6 +157,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    
+    // 1. Mostrar opciones: Cámara o Galería
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_front_rounded),
+              title: const Text('Tomar Foto (Frontal)'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Elegir de Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    // 2. Capturar imagen
+    final XFile? image = await picker.pickImage(
+      source: source,
+      preferredCameraDevice: CameraDevice.front,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 75,
+    );
+
+    if (image != null && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        await _userService.uploadAvatar(File(image.path));
+        await _loadData(); // Recargar perfil
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Avatar actualizado correctamente ✨')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Falló la carga: $e'), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -373,19 +437,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFF43CBFF), width: 2),
                       ),
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.black26,
-                        child: ClipOval(
-                          child: _currentUser?.avatarUrl != null
-                              ? Image.network(
-                                  _currentUser!.avatarUrl!,
-                                  width: 48,
-                                  height: 48,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Text(
+                      child: InkWell(
+                        onTap: _pickAndUploadImage,
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.black26,
+                              child: ClipOval(
+                                child: _currentUser?.avatarUrl != null
+                                    ? Image.network(
+                                        _currentUser!.avatarUrl!,
+                                        width: 48,
+                                        height: 48,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Center(
+                                            child: Text(
+                                              (_currentUser?.displayName?.isNotEmpty == true)
+                                                  ? _currentUser!.displayName![0].toUpperCase()
+                                                  : 'U',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 20,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : Text(
                                         (_currentUser?.displayName?.isNotEmpty == true)
                                             ? _currentUser!.displayName![0].toUpperCase()
                                             : 'U',
@@ -395,19 +476,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           fontSize: 20,
                                         ),
                                       ),
-                                    );
-                                  },
-                                )
-                              : Text(
-                                  (_currentUser?.displayName?.isNotEmpty == true)
-                                      ? _currentUser!.displayName![0].toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                  ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF43CBFF),
+                                  shape: BoxShape.circle,
                                 ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  size: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
