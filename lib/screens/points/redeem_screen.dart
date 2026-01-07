@@ -5,6 +5,7 @@ import 'package:comic_fest/services/points_service.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:comic_fest/widgets/empty_state_card.dart';
 
 class RedeemScreen extends StatefulWidget {
   const RedeemScreen({super.key});
@@ -159,18 +160,12 @@ class _RedeemScreenState extends State<RedeemScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _rewards.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.inventory_2_outlined,
-                          size: 64, color: colorScheme.outline),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No hay recompensas disponibles aún.',
-                        style: TextStyle(color: colorScheme.outline),
-                      ),
-                    ],
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: EmptyStateCard(
+                      icon: Icons.inventory_2_outlined,
+                    ),
                   ),
                 )
               : GridView.builder(

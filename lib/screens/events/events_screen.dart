@@ -1,6 +1,7 @@
 import 'package:comic_fest/models/event_model.dart';
 import 'package:comic_fest/services/event_service.dart';
 import 'package:comic_fest/widgets/event_card.dart';
+import 'package:comic_fest/widgets/empty_state_card.dart';
 import 'package:flutter/material.dart';
 
 class EventsScreen extends StatefulWidget {
@@ -98,12 +99,10 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     ColorScheme colorScheme,
   ) {
     if (events.isEmpty) {
-      return Center(
-        child: Text(
-          'No hay eventos en esta categoría',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: EmptyStateCard(),
         ),
       );
     }

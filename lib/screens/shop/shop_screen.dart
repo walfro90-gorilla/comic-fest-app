@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:comic_fest/services/product_service.dart';
 import 'package:comic_fest/models/product_model.dart';
 import 'package:comic_fest/screens/shop/cart_screen.dart';
+import 'package:comic_fest/widgets/empty_state_card.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -163,34 +164,12 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildEmptyState() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_bag_outlined,
-            size: 120,
-            color: colorScheme.secondary.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No hay productos disponibles',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Vuelve pronto para ver mercancía exclusiva',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
+    return const Padding(
+      padding: EdgeInsets.all(32),
+      child: Center(
+        child: EmptyStateCard(
+          icon: Icons.shopping_bag_outlined,
+        ),
       ),
     );
   }

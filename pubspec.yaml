@@ -26,6 +26,13 @@ dependencies:
   url_launcher: ^6.0.0
   http: ^1.2.0
   flutter_credit_card: ^4.0.0
+  webview_flutter: ^4.0.0
+  webview_flutter_android: ^3.0.0
+  webview_flutter_wkwebview: ^3.0.0
+
+  permission_handler: ^11.0.0
+  image_picker: ^1.0.4
+
 
 dev_dependencies:
   flutter_test:

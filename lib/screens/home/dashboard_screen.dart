@@ -13,8 +13,9 @@ import 'package:comic_fest/services/promotion_service.dart';
 import 'package:comic_fest/services/user_service.dart';
 import 'package:comic_fest/widgets/event_card.dart';
 import 'package:comic_fest/widgets/points_badge.dart';
+import 'package:comic_fest/widgets/empty_state_card.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
-import 'package:comic_fest/screens/home/comic_generator_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -131,44 +132,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _buildQuickActions(theme, colorScheme),
                       const SizedBox(height: 24),
                     ],
-                    if (_flashPromotions.isNotEmpty) ...[
-                      _buildSectionTitle('⚡ Promociones Flash', theme),
-                      const SizedBox(height: 12),
+                    _buildSectionTitle('⚡ Promociones Flash', theme),
+                    const SizedBox(height: 12),
+                    if (_flashPromotions.isEmpty)
+                      const EmptyStateCard()
+                    else
                       _buildFlashPromotions(theme, colorScheme),
-                      const SizedBox(height: 24),
-                    ],
-                    if (_activeContests.isNotEmpty) ...[
-                      _buildSectionTitle('🏆 Concursos Activos', theme),
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 24),
+
+                    _buildSectionTitle('🏆 Concursos Activos', theme),
+                    const SizedBox(height: 12),
+                    if (_activeContests.isEmpty)
+                      const EmptyStateCard()
+                    else
                       _buildActiveContests(theme, colorScheme),
-                      const SizedBox(height: 24),
-                    ],
-                    if (_exclusiveProducts.isNotEmpty) ...[
-                      _buildSectionTitle('💎 Productos Exclusivos', theme),
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 24),
+
+                    _buildSectionTitle('💎 Productos Exclusivos', theme),
+                    const SizedBox(height: 12),
+                    if (_exclusiveProducts.isEmpty)
+                      const EmptyStateCard()
+                    else
                       _buildExclusiveProducts(theme, colorScheme),
-                      const SizedBox(height: 24),
-                    ],
-                    if (_featuredExhibitors.isNotEmpty) ...[
-                      _buildSectionTitle('Expositores Destacados', theme),
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 24),
+
+                    _buildSectionTitle('Expositores Destacados', theme),
+                    const SizedBox(height: 12),
+                    if (_featuredExhibitors.isEmpty)
+                      const EmptyStateCard()
+                    else
                       _buildFeaturedExhibitors(theme),
-                      const SizedBox(height: 24),
-                    ],
+                    const SizedBox(height: 24),
                     _buildSectionTitle('Próximos Eventos', theme),
                     const SizedBox(height: 12),
                     if (_upcomingEvents.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Text(
-                            'No hay eventos programados',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                          ),
-                        ),
-                      )
+                      const EmptyStateCard()
                     else
                       ..._upcomingEvents.map((event) => EventCard(event: event)),
                   ],
@@ -355,27 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ],
                       ),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const PointsScreen()),
-                          );
-                          _loadData();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF43CBFF),
-                          foregroundColor: const Color(0xFF2A0845),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        child: const Text(
-                          'CANJEAR',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
+
                     ],
                   ),
                 ),
@@ -505,72 +483,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        InkWell(
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ComicGeneratorScreen()),
-            );
-            _loadData();
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF6A1B9A), // Purple
-                  const Color(0xFFAB47BC), // Light Purple
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFAB47BC).withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Generador de Comics AI',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Crea historias únicas con IA',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
-              ],
-            ),
-          ),
-        ),
+
       ],
     );
   }

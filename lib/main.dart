@@ -7,6 +7,7 @@ import 'package:comic_fest/screens/tickets/tickets_list_screen.dart';
 import 'package:comic_fest/screens/tickets/buy_tickets_screen.dart';
 import 'package:comic_fest/screens/tickets/qr_scanner_screen.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
+import 'package:comic_fest/screens/webview_screen.dart';
 import 'package:comic_fest/supabase/supabase_config.dart';
 
 void main() async {
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
         '/buy-tickets': (context) => const BuyTicketsScreen(),
         '/scan-tickets': (context) => const QRScannerScreen(),
         '/points': (context) => const PointsScreen(),
+        '/webview': (context) => const WebViewScreen(),
       },
     );
   }

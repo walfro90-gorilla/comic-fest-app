@@ -125,27 +125,7 @@ class _PointsScreenState extends State<PointsScreen> {
               color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
-                    const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RedeemScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.shopping_bag_outlined),
-            label: const Text('CANJEAR'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: colorScheme.tertiary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-            ),
-          ),
+
         ],
       ),
     );
