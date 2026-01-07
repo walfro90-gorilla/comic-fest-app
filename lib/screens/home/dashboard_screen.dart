@@ -16,6 +16,7 @@ import 'package:comic_fest/widgets/points_badge.dart';
 import 'package:comic_fest/widgets/empty_state_card.dart';
 import 'package:comic_fest/widgets/welcome_modal.dart';
 import 'package:comic_fest/widgets/retro_points_modal.dart';
+import 'package:comic_fest/widgets/feedback_survey_modal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
 
@@ -52,6 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<ContestModel> _activeContests = [];
   bool _isLoading = true;
   bool _isOnline = false;
+  bool _surveyCompleted = true; // Empieza en true para no mostrar el botón por error
 
   @override
   void initState() {
@@ -62,20 +64,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _checkFirstLogin() async {
+    // Esperar a que el usuario esté cargado para tener su ID
+    int attempts = 0;
+    while (_currentUser == null && attempts < 50 && mounted) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+    }
+
+    if (!mounted || _currentUser == null) return;
+
     final prefs = await SharedPreferences.getInstance();
-    // Usamos una nueva clave para forzar que aparezca tras esta actualización
-    final isFirstLogin = prefs.getBool('is_first_login_v2') ?? true;
+    // Clave única por usuario para que funcione correctamente en registros reales
+    final userKey = 'is_first_login_v4_${_currentUser!.id}';
+    final isFirstLogin = prefs.getBool(userKey) ?? true;
 
     if (isFirstLogin && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         
+        // 1. Bienvenida con Confeti
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => const WelcomeModal(),
         );
         
+        // 2. Bono 500 XP (Pokemon Style)
         if (mounted) {
           await showDialog(
             context: context,
@@ -83,8 +97,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             builder: (context) => const RetroPointsModal(),
           );
         }
+
+        // 3. Encuesta de Invitados (1500 XP)
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const FeedbackSurveyModal(),
+          );
+        }
         
-        await prefs.setBool('is_first_login_v2', false);
+        await prefs.setBool(userKey, false);
+        _loadData(); // Recargar puntos al final
       });
     }
   }
@@ -114,6 +138,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final promotions = await _promotionService.getActiveFlashPromotions();
       final products = await _productService.getExclusiveProducts();
       final contests = await _contestService.getActiveContests();
+      
+      final prefs = await SharedPreferences.getInstance();
+      final surveyKey = 'survey_completed_${user?.id}';
+      final completed = prefs.getBool(surveyKey) ?? false;
 
       setState(() {
         _currentUser = user;
@@ -122,6 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _flashPromotions = promotions;
         _exclusiveProducts = products;
         _activeContests = contests;
+        _surveyCompleted = completed;
         _isLoading = false;
       });
     } catch (e) {
@@ -136,11 +165,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Comic Fest 2025'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _currentUser != null ? 'Okaeri, ${_currentUser!.username ?? 'Hero'}' : 'Comic Fest 2026',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+            if (_currentUser != null)
+              Text(
+                'Nivel: ${_getUserLevel(_currentUser!.points).split(' • ').last}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+        ),
         actions: [
+          // Botón Notificaciones
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Próximamente: Sistema de Notificaciones')),
+                  );
+                },
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
+                ),
+              ),
+            ],
+          ),
+          // Radar Otaku (Acceso al Mapa o Búsqueda)
+          IconButton(
+            icon: const Icon(Icons.radar_rounded),
+            tooltip: 'Radar de Eventos',
+            onPressed: () {
+               ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Iniciando Radar de Expositores...')),
+              );
+            },
+          ),
           if (_currentUser != null)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              padding: const EdgeInsets.only(right: 8),
               child: InkWell(
                 onTap: () async {
                   await Navigator.of(context).push(
@@ -161,6 +245,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
         ],
       ),
+      floatingActionButton: (!_surveyCompleted && !_isLoading && _currentUser != null)
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                await showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const FeedbackSurveyModal(),
+                );
+                _loadData(); // Refrescar para ver si ya se completó
+              },
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.black,
+              icon: const Icon(Icons.stars),
+              label: const Text('¡GANA 1500 XP!'),
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

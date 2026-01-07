@@ -15,49 +15,53 @@ class PointsBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isLarge ? 20 : 16,
-        vertical: isLarge ? 12 : 8,
-      ),
-      decoration: BoxDecoration(
-        color: colorScheme.tertiary,
-        borderRadius: BorderRadius.circular(isLarge ? 16 : 12),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.tertiary.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Tooltip(
+      message: '$points XP Acumulados',
+      waitDuration: Duration.zero,
+      showDuration: const Duration(seconds: 3),
+      triggerMode: TooltipTriggerMode.tap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isLarge ? 16 : 10,
+          vertical: isLarge ? 10 : 6,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD700), Color(0xFFFFA500)], // Oro a Naranja
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.stars,
-            color: colorScheme.onTertiary,
-            size: isLarge ? 28 : 20,
-          ),
-          SizedBox(width: isLarge ? 10 : 8),
-          Text(
-            '$points',
-            style: TextStyle(
-              color: colorScheme.onTertiary,
-              fontSize: isLarge ? 24 : 18,
-              fontWeight: FontWeight.bold,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.amber.withValues(alpha: 0.4),
+              blurRadius: 6,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
             ),
-          ),
-          SizedBox(width: isLarge ? 6 : 4),
-          Text(
-            'puntos',
-            style: TextStyle(
-              color: colorScheme.onTertiary,
-              fontSize: isLarge ? 16 : 14,
-              fontWeight: FontWeight.w500,
+          ],
+          border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.stars_rounded,
+              color: Colors.white,
+              size: 18,
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Text(
+              points > 999 ? '${(points / 1000).toStringAsFixed(1)}k' : '$points',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
