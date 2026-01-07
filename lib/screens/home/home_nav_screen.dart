@@ -4,6 +4,8 @@ import 'package:comic_fest/screens/map/map_screen.dart';
 import 'package:comic_fest/screens/shop/shop_screen.dart';
 import 'package:comic_fest/screens/profile/profile_screen.dart';
 import 'package:comic_fest/screens/tickets/qr_scanner_screen.dart';
+import 'package:comic_fest/services/user_service.dart';
+import 'package:comic_fest/models/user_model.dart';
 import 'package:flutter/material.dart';
 
 class HomeNavScreen extends StatefulWidget {
@@ -15,6 +17,26 @@ class HomeNavScreen extends StatefulWidget {
 
 class _HomeNavScreenState extends State<HomeNavScreen> {
   int _currentIndex = 0;
+  UserModel? _currentUser;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    try {
+      final user = await UserService().getCurrentUser();
+      setState(() {
+        _currentUser = user;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   final List<Widget> _screens = const [
     DashboardScreen(),
@@ -63,18 +85,20 @@ class _HomeNavScreenState extends State<HomeNavScreen> {
           ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: FloatingActionButton.large(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const QRScannerScreen()),
-            );
-          },
-          elevation: 6,
-          child: const Icon(Icons.qr_code_scanner, size: 32),
-        ),
-      ),
+      floatingActionButton: _isLoading || _currentUser == null || (_currentUser!.role != UserRole.admin && _currentUser!.role != UserRole.staff)
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: FloatingActionButton.large(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+                  );
+                },
+                elevation: 6,
+                child: const Icon(Icons.qr_code_scanner, size: 32),
+              ),
+            ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

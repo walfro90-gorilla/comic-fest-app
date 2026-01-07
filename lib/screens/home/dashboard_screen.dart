@@ -14,6 +14,9 @@ import 'package:comic_fest/services/user_service.dart';
 import 'package:comic_fest/widgets/event_card.dart';
 import 'package:comic_fest/widgets/points_badge.dart';
 import 'package:comic_fest/widgets/empty_state_card.dart';
+import 'package:comic_fest/widgets/welcome_modal.dart';
+import 'package:comic_fest/widgets/retro_points_modal.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -55,6 +58,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _loadData();
     _listenToConnectivity();
+    _checkFirstLogin();
+  }
+
+  Future<void> _checkFirstLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Usamos una nueva clave para forzar que aparezca tras esta actualización
+    final isFirstLogin = prefs.getBool('is_first_login_v2') ?? true;
+
+    if (isFirstLogin && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const WelcomeModal(),
+        );
+        
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const RetroPointsModal(),
+          );
+        }
+        
+        await prefs.setBool('is_first_login_v2', false);
+      });
+    }
   }
 
   @override
@@ -106,6 +138,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Comic Fest 2025'),
         actions: [
+          if (_currentUser != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              child: InkWell(
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const PointsScreen()),
+                  );
+                  _loadData();
+                },
+                child: PointsBadge(points: _currentUser!.points),
+              ),
+            ),
           if (!_isOnline)
             Padding(
               padding: const EdgeInsets.only(right: 16),
