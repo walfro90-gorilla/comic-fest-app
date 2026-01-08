@@ -63,6 +63,66 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _showForgotPasswordDialog(BuildContext context) async {
+    final resetEmailController = TextEditingController(text: _emailController.text);
+    
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Recuperar Contraseña'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Ingresa tu correo electrónico para recibir un enlace de recuperación.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: resetEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty || !email.contains('@')) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Por favor ingresa un email válido')),
+                  );
+                  return;
+                }
+                
+                Navigator.pop(context); // Close dialog
+                
+                // Show loading indicator
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Enviando enlace...')),
+                  );
+                }
+
+                await _authManager.resetPassword(
+                  email: email,
+                  context: context,
+                );
+              },
+              child: const Text('Enviar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -167,6 +227,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           }
                           return null;
                         },
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => _showForgotPasswordDialog(context),
+                          child: Text(
+                            '¿Olvidaste tu contraseña?',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(

@@ -1,7 +1,7 @@
 name: comic_fest
 description: "Tu compañero digital oficial para Comic Fest, ¡la navaja suiza que todo fanático necesita! Compra boletos, vota en concursos, desbloquea promociones exclusivas y acumula puntos en la tienda, todo offline-first para"
 publish_to: "none"
-version: 1.0.0
+version: 1.0.0+1
 
 environment:
   sdk: ^3.6.0
