@@ -58,6 +58,23 @@ CREATE TABLE public.exhibitor_details (
   CONSTRAINT exhibitor_details_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id),
   CONSTRAINT exhibitor_details_booth_id_fkey FOREIGN KEY (booth_id) REFERENCES public.map_points(id)
 );
+CREATE TABLE public.feedback_surveys (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  guest_suggestions text,
+  improvements text,
+  feedback_text text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT feedback_surveys_pkey PRIMARY KEY (id),
+  CONSTRAINT feedback_surveys_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.gamification_rules (
+  action_key text NOT NULL,
+  points_value integer NOT NULL,
+  daily_limit integer,
+  is_active boolean DEFAULT true,
+  CONSTRAINT gamification_rules_pkey PRIMARY KEY (action_key)
+);
 CREATE TABLE public.map_points (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   name text NOT NULL,
@@ -196,6 +213,17 @@ CREATE TABLE public.promotions (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT promotions_pkey PRIMARY KEY (id),
   CONSTRAINT promotions_exhibitor_id_fkey FOREIGN KEY (exhibitor_id) REFERENCES public.exhibitor_details(profile_id)
+);
+CREATE TABLE public.referrals (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  referrer_id uuid NOT NULL,
+  referred_id uuid NOT NULL UNIQUE,
+  status text DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'completed'::text])),
+  code_used text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT referrals_pkey PRIMARY KEY (id),
+  CONSTRAINT referrals_referrer_id_fkey FOREIGN KEY (referrer_id) REFERENCES public.profiles(id),
+  CONSTRAINT referrals_referred_id_fkey FOREIGN KEY (referred_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.schedule_items (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
