@@ -51,6 +51,8 @@
 				<!-- TODO: Replace this value: -->
 				<!-- Copied from GoogleService-Info.plist key REVERSED_CLIENT_ID -->
 				<string>com.googleusercontent.apps.YOUR-CLIENT-ID-HERE</string>
+				<!-- Deep link for Supabase Auth -->
+				<string>io.supabase.comicfest</string>
 			</array>
 		</dict>
 	</array>
