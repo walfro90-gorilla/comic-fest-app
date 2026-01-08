@@ -62,6 +62,11 @@ class SupabaseAuthManager extends AuthManager
       final response = await _client.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'username': username,
+          'full_name': username, // Including both just in case
+        },
+        emailRedirectTo: 'io.supabase.comicfest://login-callback',
       );
 
       if (response.user != null) {

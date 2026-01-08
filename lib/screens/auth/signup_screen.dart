@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:comic_fest/auth/supabase_auth_manager.dart';
 import 'package:comic_fest/screens/home/home_nav_screen.dart';
+import 'package:comic_fest/supabase/supabase_config.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -18,8 +21,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = SupabaseConfig.client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      if (session != null && mounted) {
+        // Usuario confirmado por deep link
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeNavScreen()),
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
