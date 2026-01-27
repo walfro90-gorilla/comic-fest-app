@@ -65,6 +65,10 @@ CREATE TABLE public.feedback_surveys (
   improvements text,
   feedback_text text,
   created_at timestamp with time zone DEFAULT now(),
+  ai_sentiment text,
+  ai_category text,
+  ai_summary text,
+  ai_top_suggestion text,
   CONSTRAINT feedback_surveys_pkey PRIMARY KEY (id),
   CONSTRAINT feedback_surveys_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
@@ -75,6 +79,14 @@ CREATE TABLE public.gamification_rules (
   is_active boolean DEFAULT true,
   CONSTRAINT gamification_rules_pkey PRIMARY KEY (action_key)
 );
+CREATE TABLE public.map_config (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  map_image_url text,
+  map_width integer DEFAULT 1920,
+  map_height integer DEFAULT 1080,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT map_config_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.map_points (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   name text NOT NULL,
@@ -84,6 +96,18 @@ CREATE TABLE public.map_points (
   is_public boolean NOT NULL DEFAULT true,
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT map_points_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.notifications (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  title text NOT NULL,
+  message text NOT NULL,
+  type text NOT NULL,
+  payload jsonb,
+  read boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  user_id uuid,
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.order_items (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -271,6 +295,14 @@ CREATE TABLE public.tickets (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT tickets_pkey PRIMARY KEY (id),
   CONSTRAINT tickets_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.user_push_tokens (
+  user_id uuid NOT NULL,
+  device_token text NOT NULL,
+  platform text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_push_tokens_pkey PRIMARY KEY (user_id, device_token),
+  CONSTRAINT user_push_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.votes (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

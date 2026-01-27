@@ -2,6 +2,7 @@ import 'package:comic_fest/auth/supabase_auth_manager.dart';
 import 'package:comic_fest/screens/home/home_nav_screen.dart';
 import 'package:comic_fest/screens/auth/signup_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -258,6 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         label: const Text('Continuar con Google'),
                       ),
                       const SizedBox(height: 24),
+                      const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -276,6 +278,29 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: const Text('Regístrate'),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: InkWell(
+                          onTap: () async {
+                            final url = Uri.parse('https://gorillabs.dev/');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Desarrollado con 💚 por https://gorillabs.dev/',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                decoration: TextDecoration.underline,
+                                decorationColor: colorScheme.onSurface.withValues(alpha: 0.3),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

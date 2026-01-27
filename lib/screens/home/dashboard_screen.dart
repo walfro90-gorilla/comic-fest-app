@@ -19,6 +19,8 @@ import 'package:comic_fest/widgets/retro_points_modal.dart';
 import 'package:comic_fest/widgets/feedback_survey_modal.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
+import 'package:comic_fest/screens/notifications/notifications_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -56,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   bool _isOnline = false;
   bool _surveyCompleted = true; // Empieza en true para no mostrar el botón por error
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
@@ -63,6 +66,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadData();
     _listenToConnectivity();
     _checkFirstLogin();
+    _listenToNotifications();
   }
 
   Future<void> _checkFirstLogin() async {
@@ -155,9 +159,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _surveyCompleted = completed;
         _isLoading = false;
       });
+      
+      // Load notification count after user is loaded
+      _loadUnreadCount();
     } catch (e) {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final response = await Supabase.instance.client
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .eq('read', false);
+
+      setState(() {
+        _unreadNotifications = (response as List).length;
+      });
+    } catch (e) {
+      debugPrint('Error loading unread count: $e');
+    }
+  }
+
+  void _listenToNotifications() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    Supabase.instance.client
+        .channel('notifications_badge')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'notifications',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) {
+            _loadUnreadCount();
+          },
+        )
+        .subscribe();
   }
 
   Future<void> _pickAndUploadImage() async {
@@ -257,23 +305,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
               IconButton(
                 icon: const Icon(Icons.notifications_none_rounded),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Próximamente: Sistema de Notificaciones')),
-                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
+                    ),
+                  ).then((_) => _loadUnreadCount());
                 },
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: colorScheme.error,
-                    shape: BoxShape.circle,
+              if (_unreadNotifications > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Center(
+                      child: Text(
+                        _unreadNotifications > 99 ? '99+' : _unreadNotifications.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                  constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
                 ),
-              ),
             ],
           ),
           // Radar Otaku (Acceso al Mapa o Búsqueda)

@@ -1,43 +1,26 @@
 {
   "project_info": {
-    "project_number": "241329411586",
-    "project_id": "comic-fest-app",
-    "storage_bucket": "comic-fest-app.firebasestorage.app"
+    "project_number": "705335860912",
+    "project_id": "comic-fest-prod",
+    "storage_bucket": "comic-fest-prod.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:241329411586:android:a02b34fdb3988239c4791b",
+        "mobilesdk_app_id": "1:705335860912:android:14fb7d7c6135ec9dd46575",
         "android_client_info": {
           "package_name": "com.comicfest.app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCi44XkO4KPj9Guyg5EEpn9YAHoeiHrTEw"
+          "current_key": "AIzaSyApEofGQR2Pq7NVRY0Dojqz-mT71PyBq0A"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "241329411586-ngotenvd30tr52j90oi83ts43k2lgrnn.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.comicfest.app"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

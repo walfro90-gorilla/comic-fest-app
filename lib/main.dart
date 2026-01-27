@@ -9,6 +9,9 @@ import 'package:comic_fest/screens/tickets/qr_scanner_screen.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
 import 'package:comic_fest/screens/webview_screen.dart';
 import 'package:comic_fest/supabase/supabase_config.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:comic_fest/firebase_options.dart';
+import 'package:comic_fest/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +26,18 @@ void main() async {
   // Inicializar Supabase
   await SupabaseConfig.initialize();
   debugPrint('✅ Supabase inicializado correctamente');
+
+  // TEMPORALMENTE COMENTADO PARA DEBUG
+  // Inicializar Firebase
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+  // );
+  // debugPrint('✅ Firebase inicializado correctamente');
+
+  // TEMPORALMENTE COMENTADO PARA DEBUG
+  // Inicializar servicio de notificaciones
+  // await NotificationService().initialize();
+  // debugPrint('✅ Servicio de notificaciones inicializado');
 
   // Inicializar servicio de conectividad
   await ConnectivityService.instance.initialize();
