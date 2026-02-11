@@ -50,7 +50,9 @@ flutter:
     - assets/icons/
 
 flutter_launcher_icons:
-  android: true
+  android: "launcher_icon"
   ios: true
-  image_path: assets/icons/comic_fest_logo.png
+  image_path: "assets/icons/comic_fest_logo.png"
   remove_alpha_ios: true
+  adaptive_icon_background: "#8B5CF6"
+  adaptive_icon_foreground: "assets/icons/comic_fest_logo.png"
