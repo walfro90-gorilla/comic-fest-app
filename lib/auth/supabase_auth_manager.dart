@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:google_sign_in/google_sign_in.dart' as google_sign_in_sdk;
 import 'package:comic_fest/auth/auth_manager.dart';
@@ -139,53 +141,100 @@ class SupabaseAuthManager extends AuthManager
       }
 
       // ⚠️ MOBILE: Usar flujo nativo con Google Sign In Plugin
-      const googleClientId = '241329411586-4dqh24bs0cgsahq16qqhgrq690ek9nhm.apps.googleusercontent.com';
+      // Este es el Web Client ID del proyecto Comic-Fest-Prod en Firebase
+      const googleClientId = '705335860912-fft4vi7lckb6b36a0enn9hksos485682.apps.googleusercontent.com';
+      
+      debugPrint('🔐 Iniciando Google Sign-In...');
+      debugPrint('   Client ID: $googleClientId');
+      
       final google_sign_in_sdk.GoogleSignIn googleSignIn = google_sign_in_sdk.GoogleSignIn(
         serverClientId: googleClientId,
         scopes: const ['email', 'profile', 'openid'],
       );
       
+      debugPrint('📱 Solicitando cuenta de Google...');
       final googleUser = await googleSignIn.signIn();
       
       if (googleUser == null) {
+        debugPrint('⚠️ Usuario canceló el login');
+        if (context.mounted) {
+          _showError(context, 'Inicio de sesión cancelado');
+        }
         return null;
       }
 
+      debugPrint('✅ Usuario seleccionado: ${googleUser.email}');
+      debugPrint('🔑 Obteniendo tokens de autenticación...');
+      
       final googleAuth = await googleUser.authentication;
       final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
 
       debugPrint('🔑 Google Auth Debug (Mobile):');
-      debugPrint('   ID Token: ${idToken != null ? "FOUND" : "MISSING"}');
+      debugPrint('   Access Token: ${accessToken != null ? "FOUND (${accessToken.substring(0, 20)}...)" : "MISSING"}');
+      debugPrint('   ID Token: ${idToken != null ? "FOUND (${idToken.substring(0, 20)}...)" : "MISSING"}');
 
       if (accessToken == null) {
+        debugPrint('❌ ERROR: No se obtuvo Access Token');
+        if (context.mounted) {
+          _showError(context, 'Error: No se obtuvo el token de acceso de Google (accessToken null)');
+        }
         throw 'No Access Token found.';
       }
       if (idToken == null) {
+        debugPrint('❌ ERROR: No se obtuvo ID Token');
+        if (context.mounted) {
+          _showError(context, 'Error: No se obtuvo el token de identificación de Google (idToken null)');
+        }
         throw 'No ID Token found.';
       }
 
+      debugPrint('🔄 Enviando tokens a Supabase...');
       final response = await _client.auth.signInWithIdToken(
         provider: sb.OAuthProvider.google,
         idToken: idToken,
         accessToken: accessToken,
       );
 
+      debugPrint('📊 Respuesta de Supabase recibida');
       if (response.user != null) {
+        debugPrint('✅ Usuario autenticado: ${response.user!.email}');
         return await _fetchOrCreateProfile(response.user!);
       }
       
-      return null;
-    } on sb.AuthException catch (e) {
-      debugPrint('❌ Google auth error: ${e.message}');
+      debugPrint('⚠️ Respuesta de Supabase sin usuario');
+      // Mensaje exacto para saber si falló Supabase
       if (context.mounted) {
-        _showError(context, 'Error de autenticación: ${e.message}');
+        _showError(context, 'Error: Supabase no devolvió información del usuario');
       }
       return null;
-    } catch (e) {
-      debugPrint('❌ Google sign in error: $e');
+    } on sb.AuthException catch (e) {
+      debugPrint('❌ Supabase Auth Error: code=${e.statusCode}, msg=${e.message}');
       if (context.mounted) {
-        _showError(context, 'Error al conectar con Google.');
+         // Mensaje exacto de Supabase
+        _showError(context, 'Supabase Auth Error: ${e.message}');
+      }
+      return null;
+    } on PlatformException catch (e) {
+      debugPrint('❌ Google Sign-In Platform Error: code=${e.code}, msg=${e.message}, details=${e.details}');
+      if (context.mounted) {
+        String errorMsg = 'Error de Google (Plataforma)';
+        if (e.code == 'sign_in_failed') {
+          // ESTE es el error más común por mala configuración de SHA-1
+          errorMsg = 'Error SHA-1: Google rechazó la firma de la app (sign_in_failed). Revisa configuración en Firebase.';
+        } else if (e.code == 'network_error') {
+          errorMsg = 'Error de red. Verifica tu conexión a internet';
+        } else {
+          errorMsg = 'Error Google: ${e.code} / ${e.message}';
+        }
+        _showError(context, errorMsg);
+      }
+      return null;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error inesperado en Google Sign-In: $e');
+      debugPrint('   Stack: $stackTrace');
+      if (context.mounted) {
+        _showError(context, 'Error desconocido: ${e.toString()}');
       }
       return null;
     }
