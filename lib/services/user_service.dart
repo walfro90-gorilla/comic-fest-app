@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:comic_fest/core/supabase_service.dart';
 import 'package:comic_fest/models/user_model.dart';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -142,26 +142,31 @@ class UserService {
     }
   }
 
-  Future<String> uploadAvatar(File imageFile) async {
+  Future<String> uploadAvatar(XFile imageFile) async {
     final userId = _supabase.userId;
     if (userId == null) throw Exception('No authenticated user');
 
-    final fileExt = imageFile.path.split('.').last;
+    final rawExt = imageFile.path.split('.').last.toLowerCase();
+    final fileExt = rawExt.length <= 5 ? rawExt : 'jpg';
     final fileName = '$userId-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
     final filePath = 'avatars/$fileName';
+    final contentType = imageFile.mimeType ?? 'image/$fileExt';
 
     try {
-      // 1. Upload to Supabase Storage
+      final bytes = await imageFile.readAsBytes();
+
       await _supabase.client.storage
           .from('avatars')
-          .upload(filePath, imageFile);
+          .uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: FileOptions(contentType: contentType),
+          );
 
-      // 2. Get Public URL
       final avatarUrl = _supabase.client.storage
           .from('avatars')
           .getPublicUrl(filePath);
 
-      // 3. Update Profile
       await updateUserProfile(avatarUrl: avatarUrl);
 
       return avatarUrl;

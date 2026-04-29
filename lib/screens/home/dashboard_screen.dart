@@ -25,7 +25,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -251,7 +250,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (image != null && mounted) {
       setState(() => _isLoading = true);
       try {
-        await _userService.uploadAvatar(File(image.path));
+        await _userService.uploadAvatar(image);
         await _loadData(); // Recargar perfil
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

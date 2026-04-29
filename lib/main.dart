@@ -7,7 +7,8 @@ import 'package:comic_fest/screens/tickets/tickets_list_screen.dart';
 import 'package:comic_fest/screens/tickets/buy_tickets_screen.dart';
 import 'package:comic_fest/screens/tickets/qr_scanner_screen.dart';
 import 'package:comic_fest/screens/points/points_screen.dart';
-import 'package:comic_fest/screens/webview_screen.dart';
+import 'package:comic_fest/screens/webview_screen.dart'
+    if (dart.library.html) 'package:comic_fest/screens/webview_screen_web.dart';
 import 'package:comic_fest/supabase/supabase_config.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:comic_fest/firebase_options.dart';

@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,11 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
+    if (kIsWeb) {
+      debugPrint('ℹ️ NotificationService: skipping init on web');
+      return;
+    }
+
     // Solicitar permisos
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
